@@ -32,6 +32,15 @@ module Multimeter
     Registry.new(::Yammer::Metrics::MetricsRegistry.new, group, type)
   end
 
+  def self.metrics(group, type, &block)
+    Class.new do
+      include(Metrics)
+      group(group)
+      type(type)
+      instance_eval(&block)
+    end.new
+  end
+
   module Metrics
     def self.included(m)
       m.extend(Dsl)
@@ -59,8 +68,9 @@ module Multimeter
     module Dsl
       def multimeter_registry
         @multimeter_registry ||= begin
-          package, _, class_name = self.name.rpartition('::')
-          ::Multimeter.registry(group || package, type || class_name)
+          g, t = group, type
+          g, _, t = self.name.rpartition('::') if !(g && t)
+          ::Multimeter.registry(g, t)
         end
       end
 
@@ -119,8 +129,7 @@ module Multimeter
     end
 
     def gauge(name, options={}, &block)
-      name = ::Yammer::Metrics::MetricName.new(@group, @type, name)
-      @registry.new_gauge(name, ProcGauge.new(block))
+      @registry.new_gauge(create_name(name), ProcGauge.new(block))
     end
 
     def counter(name, options={})
