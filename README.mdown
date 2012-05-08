@@ -1,0 +1,96 @@
+# Multimeter
+
+JRuby application metric instrumentation using Yammer's Metrics.
+
+## Usage
+
+There are a number of ways to use Multimeter
+
+### Instrumenting a class
+
+    class MyWorker
+      include Multimeter::Metrics
+
+      counter :stuff
+      timer :work
+
+      def do_the_work
+        stuff.inc if something
+        work.measure do
+          do_heavy_lifting
+        end
+      end
+    end
+
+    worker = MyWorker.new
+    100.times do
+      worker.do_the_work
+    end
+    
+    puts worker.stuff.count
+    puts worker.work.mean
+
+In this setup the instrumentation is shared among all instances of the `MyWorker` class, so you'll get the total count and the global mean duration among all instances, if you create more than one.
+
+If you want to instrument each instance separately you can include `Multimeter::InstanceMetrics` instead.
+
+The metrics are grouped together using a group and type name derived from the "package" and class name of the instrumented class. This is only relevant when you enable reporting. If you use instance instrumentation the object ID is appended to the class name.
+
+### Reusable "namespace objects"
+
+If you don't want to instrument classes, but rather have instrumentation that you can pass around as an object you can create "namespace objects", classes that only have instrumentation, whose instances serve as containers for counters, timers, etc.
+
+    class MyMetrics
+      include Multimeter::Metrics
+
+      counter :stuff
+      timer :work
+    end
+
+    metrics = MyMetrics.new
+    metrics.stuff.inc
+    metrics.stuff.inc
+    metrics.stuff.dec
+    metrics.work.measure do
+      # do some heavy work
+    end
+
+Just as with instrumented classes you can include `Multimeter::InstanceMetrics` if you want each instance to keep it's own measurements.
+
+### One-off "namespace objects"
+
+You can also create one-off groups of metrics. You need to provide a group and type name (these default to the "package" and class name in the other examples, but there is no equivalent in this case)
+
+    metrics = Multimeter.metrics('my_application', 'some_metrics') do
+      counter :stuff
+      timer :work
+    end
+
+    metrics.stuff.inc
+    metrics.work.measure do
+      # do some heavy work
+    end
+
+### Create just the metrics you want
+
+If none of the options above feels right to you, you can create a metrics registry yourself, and create any metrics you want like this:
+
+    registry = Multimeter.registry('my_application', 'some_metrics')
+    stuff = registry.counter('stuff')
+    timer = registry.timer('work')
+
+    stuff.inc
+    timer.measure do
+      # do some heavy work
+    end
+
+This is also the only way to create gauges. These are metrics that proxy things that are counted by other means:
+
+    gague = registy.gauge('requests_per_second') do
+      some_object.requests_per_second
+    end
+
+    loop do
+      puts gauge.value
+      sleep 1
+    end
