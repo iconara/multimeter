@@ -1,5 +1,8 @@
 $: << File.expand_path('../lib', __FILE__)
 
+require 'rake'
+
+
 Gem::Specification.new do |s|
   s.name        = 'multimeter'
   s.version     = '1.0.0'
@@ -7,15 +10,13 @@ Gem::Specification.new do |s|
   s.authors     = ['Theo Hultberg']
   s.email       = ['theo@iconara.net']
   s.homepage    = 'http://github.com/iconara/multimeter'
-  s.summary     = ''
-  s.description = ''
+  s.summary     = 'JRuby application metric instrumentation using Yammer\'s Metrics'
+  s.description = 'Multimeter provides a JRuby DSL for instrumenting your application. It uses Yammer\'s Metrics library under the hood.'
 
   s.rubyforge_project = 'multimeter'
   
   s.add_dependency 'metrics-core-jars'
   
-  s.files         = `git ls-files`.split("\n")
-  # s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  # s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
-  s.require_paths = ['lib']
+  s.files         = FileList['lib/**/*.rb'].to_a
+  s.require_paths = %w[lib]
 end
