@@ -47,7 +47,8 @@ module Multimeter
     end
 
     def multimeter_registry
-      if self.class.send(:mode) == :instance
+      case self.class.send(:registry_mode)
+      when :instance
         @multimeter_registry ||= begin
           package, _, class_name = self.class.name.rpartition('::')
           group = self.class.send(:group) || package
@@ -86,7 +87,7 @@ module Multimeter
         @multimeter_registry_type
       end
 
-      def mode(m=nil)
+      def registry_mode(m=nil)
         @multimeter_registry_mode = m if m
         @multimeter_registry_mode
       end
@@ -104,7 +105,7 @@ module Multimeter
   module InstanceMetrics
     def self.included(m)
       m.send(:include, Metrics)
-      m.send(:mode, :instance)
+      m.send(:registry_mode, :instance)
     end
   end
 
