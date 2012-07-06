@@ -4,6 +4,7 @@ $: << File.expand_path('../../../jar-gems/slf4j-jars/lib', __FILE__)
 $: << File.expand_path('../../../jar-gems/metrics-core-jars/lib', __FILE__)
 
 require 'metrics-core-jars'
+require 'json'
 
 
 module Yammer
@@ -218,6 +219,22 @@ module Multimeter
 
     def jmx!
       ::Yammer::Metrics::JmxReporter.start_default(@registry)
+    end
+
+    def http!(rack_handler, options={})
+      app = proc do |env|
+        metrics = {}
+        each_metric do |metric_name, metric|
+          metrics[metric_name] = metric.to_h
+        end
+        [200, {}, [metrics.to_json]]
+      end
+      server_thread = java.lang.Thread.new do
+        rack_handler.run(app, options)
+      end
+      server_thread.daemon = true
+      server_thread.name = 'multimeter-http-server'
+      server_thread.start
     end
 
     def each_metric
