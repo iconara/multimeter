@@ -36,6 +36,8 @@ If you want to instrument each instance separately you can include `Multimeter::
 
 The metrics are grouped together using a group and type name derived from the "package" and class name of the instrumented class. This is only relevant when you enable reporting. If you use instance instrumentation the object ID is appended to the class name.
 
+There is also a third variant of the mixin: `Multimeter::GlobalMetrics`, which uses a single, global, metrics registry.
+
 ### Reusable "namespace objects"
 
 If you don't want to instrument classes, but rather have instrumentation that you can pass around as an object you can create "namespace objects", classes that only have instrumentation, whose instances serve as containers for counters, timers, etc.
