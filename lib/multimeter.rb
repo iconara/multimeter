@@ -239,8 +239,7 @@ module Multimeter
     end
 
     def meter(name, options={})
-      raise ArgumentError, ':event_type must be specified' unless options[:event_type]
-      event_type = options[:event_type].to_s
+      event_type = (options[:event_type] || '').to_s
       time_unit = TIME_UNITS[options[:time_unit] || :seconds]
       @registry.new_meter(create_name(name), event_type, time_unit)
     end
