@@ -10,11 +10,92 @@ module Yammer
   module Metrics
     import 'com.yammer.metrics.core.MetricsRegistry'
     import 'com.yammer.metrics.core.MetricName'
+    import 'com.yammer.metrics.core.Meter'
+    import 'com.yammer.metrics.core.Counter'
+    import 'com.yammer.metrics.core.Histogram'
     import 'com.yammer.metrics.core.Gauge'
     import 'com.yammer.metrics.core.Timer'
     import 'com.yammer.metrics.reporting.JmxReporter'
 
+    class Meter
+      def type
+        :meter
+      end
+
+      def to_h
+        {
+          :event_type => event_type,
+          :count => count,
+          :mean_rate => mean_rate,
+          :one_minute_rate => one_minute_rate,
+          :five_minute_rate => five_minute_rate,
+          :fifteen_minute_rate => fifteen_minute_rate
+        }
+      end
+    end
+
+    class Counter
+      def type
+        :counter
+      end
+
+      def to_h
+        {
+          :count => count
+        }
+      end
+    end
+
+    class Histogram
+      def type
+        :histogram
+      end
+
+      def to_h
+        {
+          :count => count,
+          :max => max,
+          :min => min,
+          :mean => mean,
+          :std_dev => std_dev,
+          :sum => sum
+        }
+      end
+    end
+
+    class Gauge
+      def type
+        :gauge
+      end
+
+      def to_h
+        {
+          :value => value
+        }
+      end
+    end
+
     class Timer
+      def type
+        :timer
+      end
+
+      def to_h
+        {
+          :event_type => event_type,
+          :count => count,
+          :mean_rate => mean_rate,
+          :one_minute_rate => one_minute_rate,
+          :five_minute_rate => five_minute_rate,
+          :fifteen_minute_rate => fifteen_minute_rate,
+          :max => max,
+          :min => min,
+          :mean => mean,
+          :std_dev => std_dev,
+          :sum => sum
+        }
+      end
+
       def measure
         ctx = self.time
         begin
@@ -27,7 +108,17 @@ module Yammer
   end
 end
 
+module JavaConcurrency
+  import 'java.util.concurrent.TimeUnit'
+  import 'java.util.concurrent.ConcurrentHashMap'
+  import 'java.util.concurrent.atomic.AtomicReference'
+end
+
 module Multimeter
+  def self.global_registry
+    GLOBAL_REGISTRY
+  end
+
   def self.registry(group, type)
     Registry.new(::Yammer::Metrics::MetricsRegistry.new, group, type)
   end
@@ -56,6 +147,10 @@ module Multimeter
           type = "#{type}-#{self.object_id}"
           ::Multimeter.registry(group, type)
         end
+      when :global
+        Multimeter.global_registry
+      when :linked
+
       else
         self.class.multimeter_registry
       end
@@ -109,6 +204,13 @@ module Multimeter
     end
   end
 
+  module GlobalMetrics
+    def self.included(m)
+      m.send(:include, Metrics)
+      m.send(:registry_mode, :global)
+    end
+  end
+
   class Registry
     def initialize(*args)
       @registry, @group, @type = args
@@ -118,15 +220,14 @@ module Multimeter
       ::Yammer::Metrics::JmxReporter.start_default(@registry)
     end
 
-    def all_metrics
-      @registry.all_metrics.map do |metric_name, metric|
-        {
-          :group => metric_name.group, 
-          :type  => metric_name.type, 
-          :name  => metric_name.name, 
-          :value => metric.respond_to?(:value) ? metric.value : metric.count
-        }
+    def each_metric
+      @registry.all_metrics.each do |metric_name, metric|
+        yield metric_name.name, metric
       end
+    end
+
+    def get(name)
+      @registry.all_metrics[name]
     end
 
     def gauge(name, options={}, &block)
@@ -138,7 +239,7 @@ module Multimeter
     end
 
     def meter(name, options={})
-      raise ArgumentError unless options[:event_type]
+      raise ArgumentError, ':event_type must be specified' unless options[:event_type]
       event_type = options[:event_type].to_s
       time_unit = TIME_UNITS[options[:time_unit] || :seconds]
       @registry.new_meter(create_name(name), event_type, time_unit)
@@ -154,13 +255,11 @@ module Multimeter
       @registry.new_timer(create_name(name), duration_unit, rate_unit)
     end
 
-  private
-
-    import 'java.util.concurrent.TimeUnit'
+    private
 
     TIME_UNITS = {
-      :seconds      => TimeUnit::SECONDS,
-      :milliseconds => TimeUnit::MILLISECONDS
+      :seconds      => JavaConcurrency::TimeUnit::SECONDS,
+      :milliseconds => JavaConcurrency::TimeUnit::MILLISECONDS
     }.freeze
 
     def create_name(name)
@@ -178,4 +277,6 @@ module Multimeter
       @proc.call
     end
   end
+
+  GLOBAL_REGISTRY = registry('', 'global')
 end
