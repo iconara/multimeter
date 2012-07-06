@@ -1,11 +1,12 @@
 $: << File.expand_path('../lib', __FILE__)
 
 require 'rake'
+require 'multimeter/version'
 
 
 Gem::Specification.new do |s|
   s.name        = 'multimeter'
-  s.version     = '1.0.0'
+  s.version     = Multimeter::VERSION
   s.platform    = 'java'
   s.authors     = ['Theo Hultberg']
   s.email       = ['theo@iconara.net']
