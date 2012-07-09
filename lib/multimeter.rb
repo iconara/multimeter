@@ -239,21 +239,13 @@ module Multimeter
     end
   end
 
-  class Registry
-    include Enumerable
-
-    attr_reader :group, :scope
-
-    def initialize(*args)
-      @group, @scope = args
-      @registry = ::Yammer::Metrics::MetricsRegistry.new
-      @sub_registries = JavaConcurrency::ConcurrentHashMap.new
-    end
-
+  module Jmx
     def jmx!
       ::Yammer::Metrics::JmxReporter.start_default(@registry)
     end
+  end
 
+  module Http
     def http!(rack_handler, options={})
       app = proc do |env|
         metrics = {}
@@ -269,7 +261,20 @@ module Multimeter
       server_thread.name = 'multimeter-http-server'
       server_thread.start
     end
+  end
 
+  class Registry
+    include Enumerable
+    include Jmx
+    include Http
+
+    attr_reader :group, :scope
+
+    def initialize(*args)
+      @group, @scope = args
+      @registry = ::Yammer::Metrics::MetricsRegistry.new
+      @sub_registries = JavaConcurrency::ConcurrentHashMap.new
+    end
 
     def sub_registry(scope)
       r = @sub_registries.get(scope)
