@@ -173,17 +173,18 @@ module Multimeter
     module Dsl
       def multimeter_registry(registry_mode=nil)
         @multimeter_registry ||= begin
-          g, t = group, scope
-          g, _, t = self.name.rpartition('::') if !(g && t)
+          package, _, class_name = self.name.rpartition('::')
+          g = group || package
+          s = scope || class_name
           if registry_mode == :linked
-            ::Multimeter.global_registry.sub_registry(t)
+            ::Multimeter.global_registry.sub_registry(s)
           else
-            ::Multimeter.registry(g, t)
+            ::Multimeter.registry(g, s)
           end
         end
       end
 
-    private
+      private
 
       def group(g=nil)
         @multimeter_registry_group = g.to_s if g

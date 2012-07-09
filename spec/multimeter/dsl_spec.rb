@@ -72,6 +72,20 @@ module Multimeter
         stuff.inc
       end
     end
+  
+    class ClassWithCustomGroup
+      include Metrics
+
+      group :a_very_special_group
+      counter :stuff
+    end
+
+    class ClassWithCustomScope
+      include Metrics
+
+      scope :a_scope_unlinke_other_scopes
+      counter :stuff
+    end
   end
 
   describe 'DSL' do
@@ -136,6 +150,26 @@ module Multimeter
         instance_registries.should have(2).items
         instance_registries[0].get(:stuff).count.should == 2
         instance_registries[1].get(:stuff).count.should == 1
+      end
+    end
+  
+    context 'with defaults' do
+      it 'has a group derived from the parent module\'s name' do
+        Specs::ClassWithMetrics.new.multimeter_registry.group.should == 'Multimeter::Specs'
+      end
+
+      it 'has a scope derived from the class name' do
+        Specs::ClassWithMetrics.new.multimeter_registry.scope.should == 'ClassWithMetrics'
+      end
+    end
+
+    context 'with customizations' do
+      it 'allows the group to be overridden' do
+        Specs::ClassWithCustomGroup.new.multimeter_registry.group.should == 'a_very_special_group'
+      end
+
+      it 'allows the scope to be overridden' do
+        Specs::ClassWithCustomScope.new.multimeter_registry.scope.should == 'a_scope_unlinke_other_scopes'
       end
     end
   end
