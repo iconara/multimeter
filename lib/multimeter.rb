@@ -213,6 +213,8 @@ module Multimeter
   end
 
   class Registry
+    include Enumerable
+
     def initialize(*args)
       @registry, @group, @type = args
     end
@@ -238,10 +240,12 @@ module Multimeter
     end
 
     def each_metric
+      return self unless block_given?
       @registry.all_metrics.each do |metric_name, metric|
         yield metric_name.name, metric
       end
     end
+    alias_method :each, :each_metric
 
     def get(name)
       @registry.all_metrics[create_name(name)]
@@ -280,6 +284,18 @@ module Multimeter
         rate_unit = TIME_UNITS[options[:rate_unit] || :seconds]
         @registry.new_timer(create_name(name), duration_unit, rate_unit)
       end
+    end
+
+    def to_h
+      h = {
+        :group => @group,
+        :type => @type,
+        :metrics => {}
+      }
+      each_metric do |metric_name, metric|
+        h[:metrics][metric_name.to_sym] = metric.to_h
+      end
+      h
     end
 
     private

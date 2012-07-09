@@ -35,5 +35,21 @@ module Multimeter
         expect { registry.meter(:some_name) }.to raise_error(ArgumentError)
       end
     end
+
+    describe '#to_h' do
+      it 'returns a hash representation of the registry, including all metrics' do
+        m = registry.meter(:some_meter)
+        c = registry.counter(:some_counter)
+        g = registry.gauge(:some_gauge) { 42 }
+        m.mark
+        c.inc
+        h = registry.to_h
+        h[:group].should == 'a_group'
+        h[:type].should == 'some_type'
+        h[:metrics].should have_key(:some_meter)
+        h[:metrics].should have_key(:some_counter)
+        h[:metrics].should have_key(:some_gauge)
+      end
+    end
   end
 end
