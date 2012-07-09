@@ -118,6 +118,7 @@ module JavaConcurrency
   import 'java.util.concurrent.TimeUnit'
   import 'java.util.concurrent.ConcurrentHashMap'
   import 'java.util.concurrent.atomic.AtomicReference'
+  import 'java.lang.Thread'
 end
 
 module Multimeter
@@ -300,7 +301,7 @@ module Multimeter
         end
         [200, {}, [metrics.to_json]]
       end
-      server_thread = java.lang.Thread.new do
+      server_thread = JavaConcurrency::Thread.new do
         rack_handler.run(app, options)
       end
       server_thread.daemon = true
