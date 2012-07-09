@@ -4,7 +4,7 @@ require_relative '../spec_helper'
 module Multimeter
   describe Registry do
     let :registry do
-      Multimeter.registry('a_group', 'some_type')
+      Multimeter.registry('a_group', 'some_scope')
     end
 
     context 'when creating metrics' do
@@ -44,11 +44,30 @@ module Multimeter
         m.mark
         c.inc
         h = registry.to_h
-        h[:group].should == 'a_group'
-        h[:type].should == 'some_type'
-        h[:metrics].should have_key(:some_meter)
-        h[:metrics].should have_key(:some_counter)
-        h[:metrics].should have_key(:some_gauge)
+        h['some_scope'].should have_key(:some_meter)
+        h['some_scope'].should have_key(:some_counter)
+        h['some_scope'].should have_key(:some_gauge)
+      end
+
+      it 'merges in sub registries' do
+        sub_registry1 = registry.sub_registry('some_other_scope')
+        sub_registry2 = registry.sub_registry('another_scope')
+        registry.counter(:some_counter).inc
+        registry.gauge(:some_gauge) { 42 }
+        sub_registry1.counter(:stuff).inc(3)
+        sub_registry2.counter(:stuff).inc(2)
+        registry.to_h.should == {
+          'some_scope' => {
+            :some_gauge => {:type => :gauge, :value => 42},
+            :some_counter => {:type => :counter, :count => 1}
+          },
+          'some_other_scope' => {
+            :stuff => {:type => :counter, :count => 3}
+          },
+          'another_scope' => {
+            :stuff => {:type => :counter, :count => 2}
+          }
+        }
       end
     end
   end

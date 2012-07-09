@@ -119,8 +119,8 @@ module Multimeter
         i1.do_stuff
         i1.do_stuff
         i2.do_stuff
-        Multimeter.global_registry.sub_registry('Multimeter::Specs', 'ClassWithLinkedMetrics1').get(:stuff).count.should == 2
-        Multimeter.global_registry.sub_registry('Multimeter::Specs', 'ClassWithLinkedMetrics2').get(:stuff).count.should == 1
+        Multimeter.global_registry.sub_registry('ClassWithLinkedMetrics1').get(:stuff).count.should == 2
+        Multimeter.global_registry.sub_registry('ClassWithLinkedMetrics2').get(:stuff).count.should == 1
       end
     end
 
@@ -132,7 +132,7 @@ module Multimeter
         i1.do_stuff
         i2.do_stuff
         all_registries = Multimeter.global_registry.sub_registries
-        instance_registries = all_registries.select { |r| r.group == 'Multimeter::Specs' && r.type.start_with?('ClassWithLinkedInstanceMetrics') }
+        instance_registries = all_registries.select { |r| r.scope.start_with?('ClassWithLinkedInstanceMetrics') }
         instance_registries.should have(2).items
         instance_registries[0].get(:stuff).count.should == 2
         instance_registries[1].get(:stuff).count.should == 1

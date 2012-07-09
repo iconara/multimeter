@@ -125,15 +125,15 @@ module Multimeter
     GLOBAL_REGISTRY
   end
 
-  def self.registry(group, type)
-    Registry.new(::Yammer::Metrics::MetricsRegistry.new, group, type)
+  def self.registry(group, scope)
+    Registry.new(group, scope)
   end
 
-  def self.metrics(group, type, &block)
+  def self.metrics(group, scope, &block)
     Class.new do
       include(Metrics)
       group(group)
-      type(type)
+      scope(scope)
       instance_eval(&block)
     end.new
   end
@@ -150,17 +150,12 @@ module Multimeter
         @multimeter_registry ||= begin
           package, _, class_name = self.class.name.rpartition('::')
           group = self.class.send(:group) || package
-          type = self.class.send(:type) || class_name
-          type = "#{type}-#{self.object_id}"
+          scope = self.class.send(:scope) || class_name
+          scope = "#{scope}-#{self.object_id}"
           if registry_mode == :linked_instance
-            registry = ::Multimeter.global_registry.sub_registry(group, type)
-            unless registry
-              registry = ::Multimeter.registry(group, type)
-              ::Multimeter.global_registry.register_sub_registry(registry)
-            end
-            registry
+            ::Multimeter.global_registry.sub_registry(scope)
           else
-            ::Multimeter.registry(group, type)
+            ::Multimeter.registry(group, scope)
           end
         end
       when :global
@@ -178,15 +173,10 @@ module Multimeter
     module Dsl
       def multimeter_registry(registry_mode=nil)
         @multimeter_registry ||= begin
-          g, t = group, type
+          g, t = group, scope
           g, _, t = self.name.rpartition('::') if !(g && t)
           if registry_mode == :linked
-            registry = ::Multimeter.global_registry.sub_registry(g, t)
-            unless registry
-              registry = ::Multimeter.registry(g, t)
-              ::Multimeter.global_registry.register_sub_registry(registry)
-            end
-            registry
+            ::Multimeter.global_registry.sub_registry(t)
           else
             ::Multimeter.registry(g, t)
           end
@@ -200,9 +190,9 @@ module Multimeter
         @multimeter_registry_group
       end
 
-      def type(t=nil)
-        @multimeter_registry_type = t.to_s if t
-        @multimeter_registry_type
+      def scope(t=nil)
+        @multimeter_registry_scope = t.to_s if t
+        @multimeter_registry_scope
       end
 
       def registry_mode(m=nil)
@@ -251,11 +241,12 @@ module Multimeter
   class Registry
     include Enumerable
 
-    attr_reader :group, :type
+    attr_reader :group, :scope
 
     def initialize(*args)
-      @registry, @group, @type = args
-      @registries = JavaConcurrency::ConcurrentHashMap.new
+      @group, @scope = args
+      @registry = ::Yammer::Metrics::MetricsRegistry.new
+      @sub_registries = JavaConcurrency::ConcurrentHashMap.new
     end
 
     def jmx!
@@ -278,26 +269,19 @@ module Multimeter
       server_thread.start
     end
 
-    def register_sub_registry(registry)
-      group_collection = @registries.get(registry.group)
-      unless group_collection
-        group_collection = JavaConcurrency::ConcurrentHashMap.new
-        @registries.put_if_absent(registry.group, group_collection)
-      end
-      group_collection = @registries.get(registry.group)
-      if registry == group_collection.put_if_absent(registry.type, registry)
-        raise ArgumentError, "Another registry with the group #{registry.group} and type #{registry.type} was already registered"
-      end
-      registry
-    end
 
-    def sub_registry(group, type)
-      group_registry = @registries.get(group)
-      group_registry.get(type) if group_registry
+    def sub_registry(scope)
+      r = @sub_registries.get(scope)
+      unless r
+        r = self.class.new(@group, scope)
+        @sub_registries.put_if_absent(scope, r)
+        r = @sub_registries.get(scope)
+      end
+      r
     end
 
     def sub_registries
-      @registries.flat_map { |g, c| c.values }
+      @sub_registries.values.to_a
     end
 
     def each_metric
@@ -348,13 +332,12 @@ module Multimeter
     end
 
     def to_h
-      h = {
-        :group => @group,
-        :type => @type,
-        :metrics => {}
-      }
-      each_metric do |metric_name, metric|
-        h[:metrics][metric_name.to_sym] = metric.to_h
+      h = {}
+      [self, *sub_registries].each do |registry|
+        m = h[registry.scope] ||= {}
+        registry.each_metric do |metric_name, metric|
+          m[metric_name.to_sym] = metric.to_h
+        end
       end
       h
     end
@@ -367,7 +350,7 @@ module Multimeter
     }.freeze
 
     def create_name(name)
-      ::Yammer::Metrics::MetricName.new(@group, @type, name.to_s)
+      ::Yammer::Metrics::MetricName.new(@group, @scope, name.to_s)
     end
 
     def error_translation
@@ -390,5 +373,5 @@ module Multimeter
     end
   end
 
-  GLOBAL_REGISTRY = registry('', 'global')
+  GLOBAL_REGISTRY = registry('global', 'global')
 end
