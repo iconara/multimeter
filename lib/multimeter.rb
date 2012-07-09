@@ -158,7 +158,6 @@ module Multimeter
       registry_mode = self.class.send(:registry_mode)
       case registry_mode
       when :instance, :linked_instance
-        # TODO: this is not thread safe!
         @multimeter_registry ||= begin
           package, _, class_name = self.class.name.rpartition('::')
           group = self.class.send(:group) || package
@@ -179,7 +178,6 @@ module Multimeter
 
     module Dsl
       def multimeter_registry
-        # TODO: this is not thread safe!
         @multimeter_registry ||= begin
           package, _, class_name = self.name.rpartition('::')
           g = group || package

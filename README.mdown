@@ -99,8 +99,4 @@ This is also the only way to create gauges. These are metrics that proxy things 
 
 ## Thread safety
 
-The metrics and the registries are all thread safe. However, setup is not thread safe in all cases. For example there is a potential race condition on accessing the first metric for instance registries (e.g. registries for instances that mix in `Multimeter::InstanceMetrics`).
-
-If you need to access instance or linked metrics concurrently, try to first touch a single metrics (just referring it by name, or referring to `multimeter_registry` is enough) before the concurrent code start to make sure the registry has been initialized. After the registry instance variable has been initialized there it's all thread safe.
-
-Future versions may rectify this limitation, but at the moment I prefer not to wrap all accesses to registries in mutexes. Hopefully there's a more elegant solution.
+The metrics and the registries are all thread safe. The only thing that is not thread safe is the configuration DSL, but it's meant to be used in class context and unless you use `autoload` that should always run single threaded.
