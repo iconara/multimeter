@@ -36,7 +36,7 @@ If you want to instrument each instance separately you can include `Multimeter::
 
 The metrics are grouped together using a group and type name derived from the "package" and class name of the instrumented class. This is only relevant when you enable reporting. If you use instance instrumentation the object ID is appended to the class name.
 
-There is also a third variant of the mixin: `Multimeter::GlobalMetrics`, which uses a single, global, metrics registry.
+There are two more variants of instance of the mixin: `Multimeter::GlobalMetrics`, which uses a single, global, metrics registry, and `Multimeter::LinkedMetrics` & `Multimeter::LinkedInstanceMetrics`. The global metrics registers all metrics with the global registry (you can get a reference to it using `Multimeter.global_registry`) and the "linked" variants create new registries as sub registries of the global registry (you can find them using `Multimeter.global_registry.sub_registries`). If you're using linked instance metrics it's very, very important that you only mix it into classes that you don't create lots of instances of. Only mix it into classes of long running objects. The reason is that the metrics registries created for the instances will never be garbage collected, they stay around forever.
 
 ### Reusable "namespace objects"
 
@@ -96,3 +96,11 @@ This is also the only way to create gauges. These are metrics that proxy things 
       puts gauge.value
       sleep 1
     end
+
+## Thread safety
+
+The metrics and the registries are all thread safe. However, setup is not thread safe in all cases. For example there is a potential race condition on accessing the first metric for instance registries (e.g. registries for instances that mix in `Multimeter::InstanceMetrics`).
+
+If you need to access instance or linked metrics concurrently, try to first touch a single metrics (just referring it by name, or referring to `multimeter_registry` is enough) before the concurrent code start to make sure the registry has been initialized. After the registry instance variable has been initialized there it's all thread safe.
+
+Future versions may rectify this limitation, but at the moment I prefer not to wrap all accesses to registries in mutexes. Hopefully there's a more elegant solution.
