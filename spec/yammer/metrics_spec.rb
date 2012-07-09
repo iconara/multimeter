@@ -12,7 +12,7 @@ module Yammer::Metrics
         it 'returns a hash representation of the counter' do
           c = registry.counter(:a_counter)
           c.inc
-          c.to_h.should == {:count => 1}
+          c.to_h.should == {:type => :counter, :count => 1}
         end
       end
     end
@@ -23,6 +23,7 @@ module Yammer::Metrics
           m = registry.meter(:some_meter, :event_type => 'stuff')
           m.mark
           h = m.to_h
+          h[:type].should == :meter
           h[:event_type].should == 'stuff'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
@@ -38,6 +39,7 @@ module Yammer::Metrics
         hs = registry.histogram(:some_hist)
         hs.update(4)
         h = hs.to_h
+        h[:type].should == :histogram
         h[:count].should == 1
         h[:max].should be_a(Numeric)
         h[:min].should be_a(Numeric)
@@ -53,6 +55,7 @@ module Yammer::Metrics
           t = registry.timer(:some_timer)
           t.measure { }
           h = t.to_h
+          h[:type].should == :timer
           h[:event_type].should == 'calls'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
@@ -72,7 +75,7 @@ module Yammer::Metrics
       describe '#to_h' do
         it 'returns a hash representation of the gauge' do
           g = registry.gauge(:some_gauge) { 42 }
-          g.to_h.should == {:value => 42}
+          g.to_h.should == {:type => :gauge, :value => 42}
         end
       end
     end

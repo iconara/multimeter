@@ -25,6 +25,7 @@ module Yammer
 
       def to_h
         {
+          :type => :meter,
           :event_type => event_type,
           :count => count,
           :mean_rate => mean_rate,
@@ -42,6 +43,7 @@ module Yammer
 
       def to_h
         {
+          :type => :counter,
           :count => count
         }
       end
@@ -54,6 +56,7 @@ module Yammer
 
       def to_h
         {
+          :type => :histogram,
           :count => count,
           :max => max,
           :min => min,
@@ -71,6 +74,7 @@ module Yammer
 
       def to_h
         {
+          :type => :gauge,
           :value => value
         }
       end
@@ -83,6 +87,7 @@ module Yammer
 
       def to_h
         {
+          :type => :timer,
           :event_type => event_type,
           :count => count,
           :mean_rate => mean_rate,
