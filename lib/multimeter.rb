@@ -244,31 +244,42 @@ module Multimeter
     end
 
     def get(name)
-      @registry.all_metrics[name]
+      @registry.all_metrics[create_name(name)]
     end
 
     def gauge(name, options={}, &block)
+      if get(name) && block_given?
+        raise ArgumentError, %(Cannot redeclare gauge #{name})
+      end
       @registry.new_gauge(create_name(name), ProcGauge.new(block))
     end
 
     def counter(name, options={})
-      @registry.new_counter(create_name(name))
+      error_translation do
+        @registry.new_counter(create_name(name))
+      end
     end
 
     def meter(name, options={})
-      event_type = (options[:event_type] || '').to_s
-      time_unit = TIME_UNITS[options[:time_unit] || :seconds]
-      @registry.new_meter(create_name(name), event_type, time_unit)
+      error_translation do
+        event_type = (options[:event_type] || '').to_s
+        time_unit = TIME_UNITS[options[:time_unit] || :seconds]
+        @registry.new_meter(create_name(name), event_type, time_unit)
+      end
     end
 
     def histogram(name, options={})
-      @registry.new_histogram(create_name(name), !!options[:biased])
+      error_translation do
+        @registry.new_histogram(create_name(name), !!options[:biased])
+      end
     end
 
     def timer(name, options={})
-      duration_unit = TIME_UNITS[options[:duration_unit] || :milliseconds]
-      rate_unit = TIME_UNITS[options[:rate_unit] || :seconds]
-      @registry.new_timer(create_name(name), duration_unit, rate_unit)
+      error_translation do
+        duration_unit = TIME_UNITS[options[:duration_unit] || :milliseconds]
+        rate_unit = TIME_UNITS[options[:rate_unit] || :seconds]
+        @registry.new_timer(create_name(name), duration_unit, rate_unit)
+      end
     end
 
     private
@@ -280,6 +291,14 @@ module Multimeter
 
     def create_name(name)
       ::Yammer::Metrics::MetricName.new(@group, @type, name.to_s)
+    end
+
+    def error_translation
+      begin
+        yield
+      rescue java.lang.ClassCastException => cce
+        raise ArgumentError, %(Cannot redeclare a metric as another type)
+      end
     end
   end
 
