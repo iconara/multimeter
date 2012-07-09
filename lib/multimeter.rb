@@ -143,10 +143,22 @@ module Multimeter
       m.extend(Dsl)
     end
 
+    def initialize(*args)
+      super
+      self.class.instance_gauges.each do |name, block|
+        instance_block = proc { instance_exec(&block) }
+        multimeter_registry.gauge(name, &instance_block)
+      end
+      self.class.instance_metrics.each do |type, name, options|
+        multimeter_registry.send(type, name, options)
+      end
+    end
+
     def multimeter_registry
       registry_mode = self.class.send(:registry_mode)
       case registry_mode
       when :instance, :linked_instance
+        # TODO: this is not thread safe!
         @multimeter_registry ||= begin
           package, _, class_name = self.class.name.rpartition('::')
           group = self.class.send(:group) || package
@@ -161,23 +173,34 @@ module Multimeter
       when :global
         ::Multimeter.global_registry
       else
-        self.class.multimeter_registry(registry_mode)
+        self.class.multimeter_registry
       end
     end
 
     module Dsl
-      def multimeter_registry(registry_mode=nil)
+      def multimeter_registry
         # TODO: this is not thread safe!
         @multimeter_registry ||= begin
           package, _, class_name = self.name.rpartition('::')
           g = group || package
           s = scope || class_name
-          if registry_mode == :linked
+          case registry_mode
+          when :linked
             ::Multimeter.global_registry.sub_registry(s)
+          when :global
+            ::Multimeter.global_registry
           else
             ::Multimeter.registry(g, s)
           end
         end
+      end
+
+      def instance_gauges
+        @instance_gauges || []
+      end
+
+      def instance_metrics
+        @instance_metrics || []
       end
 
       private
@@ -197,11 +220,40 @@ module Multimeter
         @multimeter_registry_mode
       end
 
-      %w[counter meter histogram timer].each do |type|
+      def add_instance_gauge(name, block)
+        @instance_gauges ||= []
+        @instance_gauges << [name, block]
+      end
+
+      def add_instance_metric(type, name, options)
+        @instance_metrics ||= []
+        @instance_metrics << [type, name, options]
+      end
+
+      %w[counter meter histogram timer].each do |t|
+        type = t.to_sym
         define_method(type) do |name, options={}|
-          define_method(name) do
+          case registry_mode
+          when :instance, :linked_instance
+            add_instance_metric(type, name, options)
+          else
             multimeter_registry.send(type, name, options)
           end
+          define_method(name) do
+            multimeter_registry.get(name)
+          end
+        end
+      end
+
+      def gauge(name, &block)
+        case registry_mode
+        when :instance, :linked_instance
+          add_instance_gauge(name, block)
+        else
+          multimeter_registry.gauge(name, &block)
+        end
+        define_method(name) do
+          multimeter_registry.gauge(name)
         end
       end
     end

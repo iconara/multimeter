@@ -86,6 +86,30 @@ module Multimeter
       scope :a_scope_unlinke_other_scopes
       counter :stuff
     end
+  
+    class ClassWithGauge
+      include Metrics
+
+      gauge :current_value do
+        @a_value
+      end
+
+      def self.set_a_value=(v)
+        @a_value = v
+      end
+    end
+
+    class ClassWithInstanceGauge
+      include InstanceMetrics
+
+      gauge :current_value do
+        @a_value
+      end
+
+      def set_a_value=(v)
+        @a_value = v
+      end
+    end
   end
 
   describe 'DSL' do
@@ -170,6 +194,25 @@ module Multimeter
 
       it 'allows the scope to be overridden' do
         Specs::ClassWithCustomScope.new.multimeter_registry.scope.should == 'a_scope_unlinke_other_scopes'
+      end
+    end
+  
+    context 'with gauges' do
+      it 'runs the gauge in class context when the metrics are class scoped' do
+        Specs::ClassWithGauge.set_a_value = 42
+        i1 = Specs::ClassWithGauge.new
+        i2 = Specs::ClassWithGauge.new
+        i1.current_value.value.should == 42
+        i2.current_value.value.should == 42
+      end
+
+      it 'runs the gauge in instance context when the metrics are instance scoped' do
+        i1 = Specs::ClassWithInstanceGauge.new
+        i2 = Specs::ClassWithInstanceGauge.new
+        i1.set_a_value = 42
+        i2.set_a_value = 43
+        i1.current_value.value.should == 42
+        i2.current_value.value.should == 43
       end
     end
   end
