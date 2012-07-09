@@ -165,13 +165,9 @@ module Multimeter
       end
     end
 
-    def multimeter_cache(type, name, options)
-      @multimeter_cache ||= {}
-      @multimeter_cache[name] ||= multimeter_registry.send(type, name, options)
-    end
-
     module Dsl
       def multimeter_registry(registry_mode=nil)
+        # TODO: this is not thread safe!
         @multimeter_registry ||= begin
           package, _, class_name = self.name.rpartition('::')
           g = group || package
@@ -204,7 +200,7 @@ module Multimeter
       %w[counter meter histogram timer].each do |type|
         define_method(type) do |name, options={}|
           define_method(name) do
-            multimeter_cache(type, name, options)
+            multimeter_registry.send(type, name, options)
           end
         end
       end
