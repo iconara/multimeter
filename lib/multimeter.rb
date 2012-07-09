@@ -144,21 +144,29 @@ module Multimeter
     end
 
     def multimeter_registry
-      case self.class.send(:registry_mode)
-      when :instance
+      registry_mode = self.class.send(:registry_mode)
+      case registry_mode
+      when :instance, :linked_instance
         @multimeter_registry ||= begin
           package, _, class_name = self.class.name.rpartition('::')
           group = self.class.send(:group) || package
           type = self.class.send(:type) || class_name
           type = "#{type}-#{self.object_id}"
-          ::Multimeter.registry(group, type)
+          if registry_mode == :linked_instance
+            registry = ::Multimeter.global_registry.sub_registry(group, type)
+            unless registry
+              registry = ::Multimeter.registry(group, type)
+              ::Multimeter.global_registry.register_sub_registry(registry)
+            end
+            registry
+          else
+            ::Multimeter.registry(group, type)
+          end
         end
       when :global
-        Multimeter.global_registry
-      when :linked
-
+        ::Multimeter.global_registry
       else
-        self.class.multimeter_registry
+        self.class.multimeter_registry(registry_mode)
       end
     end
 
@@ -168,11 +176,20 @@ module Multimeter
     end
 
     module Dsl
-      def multimeter_registry
+      def multimeter_registry(registry_mode=nil)
         @multimeter_registry ||= begin
           g, t = group, type
           g, _, t = self.name.rpartition('::') if !(g && t)
-          ::Multimeter.registry(g, t)
+          if registry_mode == :linked
+            registry = ::Multimeter.global_registry.sub_registry(g, t)
+            unless registry
+              registry = ::Multimeter.registry(g, t)
+              ::Multimeter.global_registry.register_sub_registry(registry)
+            end
+            registry
+          else
+            ::Multimeter.registry(g, t)
+          end
         end
       end
 
@@ -217,11 +234,28 @@ module Multimeter
     end
   end
 
+  module LinkedMetrics
+    def self.included(m)
+      m.send(:include, Metrics)
+      m.send(:registry_mode, :linked)
+    end
+  end
+
+  module LinkedInstanceMetrics
+    def self.included(m)
+      m.send(:include, Metrics)
+      m.send(:registry_mode, :linked_instance)
+    end
+  end
+
   class Registry
     include Enumerable
 
+    attr_reader :group, :type
+
     def initialize(*args)
       @registry, @group, @type = args
+      @registries = JavaConcurrency::ConcurrentHashMap.new
     end
 
     def jmx!
@@ -242,6 +276,28 @@ module Multimeter
       server_thread.daemon = true
       server_thread.name = 'multimeter-http-server'
       server_thread.start
+    end
+
+    def register_sub_registry(registry)
+      group_collection = @registries.get(registry.group)
+      unless group_collection
+        group_collection = JavaConcurrency::ConcurrentHashMap.new
+        @registries.put_if_absent(registry.group, group_collection)
+      end
+      group_collection = @registries.get(registry.group)
+      if registry == group_collection.put_if_absent(registry.type, registry)
+        raise ArgumentError, "Another registry with the group #{registry.group} and type #{registry.type} was already registered"
+      end
+      registry
+    end
+
+    def sub_registry(group, type)
+      group_registry = @registries.get(group)
+      group_registry.get(type) if group_registry
+    end
+
+    def sub_registries
+      @registries.flat_map { |g, c| c.values }
     end
 
     def each_metric
