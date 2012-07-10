@@ -2,6 +2,24 @@ require_relative '../spec_helper'
 
 
 module Multimeter
+  module RegistrySpecs
+    class ClassWithInstanceMetrics
+      include InstanceMetrics
+
+      instance_id { @id }
+      counter :count
+
+      def initialize(id)
+        @id = id
+        super
+      end
+
+      def c!
+        counter.inc
+      end
+    end
+  end
+
   describe Registry do
     let :registry do
       Multimeter.registry('a_group', 'some_scope')
@@ -36,26 +54,67 @@ module Multimeter
       end
     end
 
-    describe '#to_h' do
-      it 'returns a hash representation of the registry, including all metrics' do
-        m = registry.meter(:some_meter)
-        c = registry.counter(:some_counter)
-        g = registry.gauge(:some_gauge) { 42 }
-        m.mark
-        c.inc
-        h = registry.to_h
-        h['some_scope'].should have_key(:some_meter)
-        h['some_scope'].should have_key(:some_counter)
-        h['some_scope'].should have_key(:some_gauge)
+    context 'with custom registry instance IDs' do
+      it 'uses the value returned by the instance_id pragma' do
+        i1 = RegistrySpecs::ClassWithInstanceMetrics.new(3)
+        i1.multimeter_registry.instance_id.should == 3
+      end
+    end
+
+    describe '#find_metric' do
+      let(:sub_registry) { registry.sub_registry('another_scope') }
+
+      before do
+        registry.meter(:some_meter)
+        sub_registry.meter(:some_meter)
+        sub_registry.meter(:another_meter)
       end
 
-      it 'merges in sub registries' do
+      it 'looks in the receiving registry first' do
+        m1 = registry.find_metric(:some_meter)
+        m2 = registry.get(:some_meter)
+        m1.should_not be_nil
+        m1.should equal(m2)
+      end
+
+      it 'looks in sub registries second' do
+        m1 = registry.find_metric(:another_meter)
+        m1.should_not be_nil
+      end
+
+      it 'looks all the way down into sub sub sub registries and so on' do
+        registry.sub_registry('down').sub_registry('down_again').meter(:very_deep)
+        m1 = registry.find_metric(:very_deep)
+        m1.should_not be_nil
+      end
+
+      it 'returns nil if no metric was found in any sub registry' do
+        registry.find_metric(:hobbeldygook).should be_nil
+      end
+    end
+
+    describe '#to_h' do
+      it 'returns a hash representation of the registry, including all metrics' do
+        c = registry.counter(:some_counter)
+        g = registry.gauge(:some_gauge) { 42 }
+        c.inc
+        registry.to_h.should == {
+          'some_scope' => {
+            :some_counter => c.to_h,
+            :some_gauge => g.to_h
+          }
+        }
+      end
+
+      it 'merges in sub registries, and sub sub registries' do
         sub_registry1 = registry.sub_registry('some_other_scope')
         sub_registry2 = registry.sub_registry('another_scope')
+        sub_sub_registry1 = sub_registry2.sub_registry('sub_sub_scope')
         registry.counter(:some_counter).inc
         registry.gauge(:some_gauge) { 42 }
         sub_registry1.counter(:stuff).inc(3)
         sub_registry2.counter(:stuff).inc(2)
+        sub_sub_registry1.counter(:things).inc
         registry.to_h.should == {
           'some_scope' => {
             :some_gauge => {:type => :gauge, :value => 42},
@@ -66,7 +125,42 @@ module Multimeter
           },
           'another_scope' => {
             :stuff => {:type => :counter, :count => 2}
+          },
+          'sub_sub_scope' => {
+            :things => {:type => :counter, :count => 1}
           }
+        }
+      end
+
+      it 'merges instance registries by creating a meta-metric' do
+        instance_registry1 = registry.sub_registry('the_scope', 1)
+        instance_registry2 = registry.sub_registry('the_scope', 2)
+        instance_registry3 = registry.sub_registry('the_scope', 3)
+        instance_registry1.counter(:stuff).inc(2)
+        instance_registry1.gauge(:status) { 0 }
+        instance_registry2.counter(:stuff).inc(1)
+        instance_registry3.counter(:stuff).inc(3)
+        registry.to_h.should == {
+          'the_scope' => {
+            :stuff => {
+              :type => :aggregate,
+              :total => {:type => :counter, :count => 6},
+              :parts => {
+                '1' => {:type => :counter, :count => 2},
+                '2' => {:type => :counter, :count => 1},
+                '3' => {:type => :counter, :count => 3}
+              }
+            },
+            :status => {:type => :gauge, :value => 0}
+          }
+        }
+      end
+
+      it 'prunes empty scopes' do
+        sub_registry1 = registry.sub_registry('scope1')
+        sub_registry1.counter(:count1).inc
+        registry.to_h.should == {
+          'scope1' => {:count1 => {:type => :counter, :count => 1}}
         }
       end
     end

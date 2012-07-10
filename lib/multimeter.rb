@@ -126,8 +126,8 @@ module Multimeter
     GLOBAL_REGISTRY
   end
 
-  def self.registry(group, scope)
-    Registry.new(group, scope)
+  def self.registry(group, scope, instance_id=nil)
+    Registry.new(group, scope, instance_id)
   end
 
   def self.metrics(group, scope, &block)
@@ -163,11 +163,15 @@ module Multimeter
           package, _, class_name = self.class.name.rpartition('::')
           group = self.class.send(:group) || package
           scope = self.class.send(:scope) || class_name
-          scope = "#{scope}-#{self.object_id}"
-          if registry_mode == :linked_instance
-            ::Multimeter.global_registry.sub_registry(scope)
+          if (iid_proc = self.class.send(:instance_id))
+            instance_id = instance_exec(&iid_proc)
           else
-            ::Multimeter.registry(group, scope)
+            instance_id = self.object_id
+          end
+          if registry_mode == :linked_instance
+            ::Multimeter.global_registry.sub_registry(scope, instance_id)
+          else
+            ::Multimeter.registry(group, scope, instance_id)
           end
         end
       when :global
@@ -212,6 +216,12 @@ module Multimeter
       def scope(t=nil)
         @multimeter_registry_scope = t.to_s if t
         @multimeter_registry_scope
+      end
+
+      def instance_id(pr=nil, &block_pr)
+        pr ||= block_pr
+        @multimeter_registry_iid = pr if pr
+        @multimeter_registry_iid
       end
 
       def registry_mode(m=nil)
@@ -295,11 +305,7 @@ module Multimeter
   module Http
     def http!(rack_handler, options={})
       app = proc do |env|
-        metrics = {}
-        each_metric do |metric_name, metric|
-          metrics[metric_name] = metric.to_h
-        end
-        [200, {}, [metrics.to_json]]
+        [200, {}, [self.to_h.to_json]]
       end
       server_thread = JavaConcurrency::Thread.new do
         rack_handler.run(app, options)
@@ -315,20 +321,26 @@ module Multimeter
     include Jmx
     include Http
 
-    attr_reader :group, :scope
+    attr_reader :group, :scope, :instance_id
 
     def initialize(*args)
-      @group, @scope = args
+      @group, @scope, @instance_id = args
       @registry = ::Yammer::Metrics::MetricsRegistry.new
       @sub_registries = JavaConcurrency::ConcurrentHashMap.new
     end
 
-    def sub_registry(scope)
-      r = @sub_registries.get(scope)
+    def instance_registry?
+      !!@instance_id
+    end
+
+    def sub_registry(scope, instance_id=nil)
+      full_id = scope.dup
+      full_id << "/#{instance_id}" if instance_id
+      r = @sub_registries.get(full_id)
       unless r
-        r = self.class.new(@group, scope)
-        @sub_registries.put_if_absent(scope, r)
-        r = @sub_registries.get(scope)
+        r = self.class.new(@group, scope, instance_id)
+        @sub_registries.put_if_absent(full_id, r)
+        r = @sub_registries.get(full_id)
       end
       r
     end
@@ -347,6 +359,17 @@ module Multimeter
 
     def get(name)
       @registry.all_metrics[create_name(name)]
+    end
+
+    def find_metric(name)
+      m = get(name)
+      unless m
+        sub_registries.each do |registry|
+          m = registry.find_metric(name)
+          break if m
+        end
+      end
+      m
     end
 
     def gauge(name, options={}, &block)
@@ -385,13 +408,34 @@ module Multimeter
     end
 
     def to_h
-      h = {}
-      [self, *sub_registries].each do |registry|
-        m = h[registry.scope] ||= {}
-        registry.each_metric do |metric_name, metric|
-          m[metric_name.to_sym] = metric.to_h
-        end
+      h = {@scope => {}}
+      each_metric do |metric_name, metric|
+        h[@scope][metric_name.to_sym] = metric.to_h
       end
+      registries_by_scope = sub_registries.group_by { |r| r.scope }
+      registries_by_scope.each do |scope, registries|
+        if registries.size == 1
+          h.merge!(registries.first.to_h)
+        else
+          h[scope] = {}
+          registries_by_metric = Hash.new { |h, k| h[k] = [] }
+          registries.each do |registry|
+            registry.each_metric do |metric_name, _|
+              registries_by_metric[metric_name] << registry
+            end
+          end
+          registries_by_metric.each do |metric_name, registries|
+            if registries.size == 1
+              h[scope][metric_name.to_sym] = registries.first.get(metric_name).to_h
+            else
+              metrics_by_instance_id = Hash[registries.map { |r| [r.instance_id, r.get(metric_name)] }]
+              h[scope][metric_name.to_sym] = Aggregate.new(metrics_by_instance_id).to_h
+            end
+          end
+        end
+        h
+      end
+      h.delete_if { |k, v| v.empty? }
       h
     end
 
@@ -412,6 +456,68 @@ module Multimeter
       rescue java.lang.ClassCastException => cce
         raise ArgumentError, %(Cannot redeclare a metric as another type)
       end
+    end
+  end
+
+  class Aggregate
+    def initialize(metrics)
+      @metrics = metrics
+      @type = check_type!
+    end
+
+    def to_h
+      {
+        :type => :aggregate,
+        :total => compute_total,
+        :parts => Hash[@metrics.map { |k, v| [k.to_s, v.to_h] }]
+      }
+    end
+
+    private
+
+    def check_type!
+      types = @metrics.values.map(&:type).uniq
+      unless types.size == 1
+        raise ArgumentError, %[All metrics of an aggregate must be of the same type (they were: #{types.join(', ')})]
+      end
+      types.first
+    end
+
+    COMPUTATIONS = {
+      :max => :max,
+      :min => :min,
+      :type => :first,
+      :event_type => :first,
+      :count => :sum,
+      :sum => :sum,
+      :mean => :avg,
+      :mean_rate => :avg,
+      :one_minute_rate => :avg,
+      :five_minute_rate => :avg,
+      :fifteen_minute_rate => :avg,
+      :std_dev => :avg,
+      :value => :avg
+    }.freeze
+
+    def compute_total
+      h = {}
+      metric_hs = @metrics.values.map(&:to_h)
+      metric_hs.first.keys.each do |property|
+        values = metric_hs.map { |h| h[property] }
+        aggregate_value = begin
+          case COMPUTATIONS[property]
+          when :first then values.first
+          when :max   then values.max
+          when :min   then values.min
+          when :sum   then values.reduce(:+)
+          when :avg   then values.reduce(:+)/values.size.to_f
+          else
+            raise "Don't know how to aggregate #{property}"
+          end
+        end
+        h[property] = aggregate_value
+      end
+      h
     end
   end
 

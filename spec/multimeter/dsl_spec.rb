@@ -2,7 +2,7 @@ require_relative '../spec_helper'
 
 
 module Multimeter
-  module Specs
+  module DslSpecs
     class ClassWithMetrics
       include Metrics
 
@@ -115,8 +115,8 @@ module Multimeter
   describe 'DSL' do
     describe Metrics do
       it 'scopes metrics to the class' do
-        i1 = Specs::ClassWithMetrics.new
-        i2 = Specs::ClassWithMetrics.new
+        i1 = DslSpecs::ClassWithMetrics.new
+        i2 = DslSpecs::ClassWithMetrics.new
         i1.do_stuff
         i1.do_stuff
         i2.do_stuff
@@ -127,8 +127,8 @@ module Multimeter
 
     describe InstanceMetrics do
       it 'scopes metrics to each instance' do
-        i1 = Specs::ClassWithInstanceMetrics.new
-        i2 = Specs::ClassWithInstanceMetrics.new
+        i1 = DslSpecs::ClassWithInstanceMetrics.new
+        i2 = DslSpecs::ClassWithInstanceMetrics.new
         i1.do_stuff
         i1.do_stuff
         i2.do_stuff
@@ -139,8 +139,8 @@ module Multimeter
 
     describe GlobalMetrics do
       it 'scopes metrics to each instance' do
-        i1 = Specs::ClassWithGlobalMetrics1.new
-        i2 = Specs::ClassWithGlobalMetrics2.new
+        i1 = DslSpecs::ClassWithGlobalMetrics1.new
+        i2 = DslSpecs::ClassWithGlobalMetrics2.new
         i1.do_stuff
         i1.do_stuff
         i2.do_stuff
@@ -152,8 +152,8 @@ module Multimeter
 
     describe LinkedMetrics do
       it 'scopes metrics to the class, but registers the registry in a global hierarchy' do
-        i1 = Specs::ClassWithLinkedMetrics1.new
-        i2 = Specs::ClassWithLinkedMetrics2.new
+        i1 = DslSpecs::ClassWithLinkedMetrics1.new
+        i2 = DslSpecs::ClassWithLinkedMetrics2.new
         i1.do_stuff
         i1.do_stuff
         i2.do_stuff
@@ -164,8 +164,8 @@ module Multimeter
 
     describe LinkedInstanceMetrics do
       it 'scopes metrics to the instance, but registers the registry in a global hierarchy' do
-        i1 = Specs::ClassWithLinkedInstanceMetrics.new
-        i2 = Specs::ClassWithLinkedInstanceMetrics.new
+        i1 = DslSpecs::ClassWithLinkedInstanceMetrics.new
+        i2 = DslSpecs::ClassWithLinkedInstanceMetrics.new
         i1.do_stuff
         i1.do_stuff
         i2.do_stuff
@@ -179,36 +179,36 @@ module Multimeter
   
     context 'with defaults' do
       it 'has a group derived from the parent module\'s name' do
-        Specs::ClassWithMetrics.new.multimeter_registry.group.should == 'Multimeter::Specs'
+        DslSpecs::ClassWithMetrics.new.multimeter_registry.group.should == 'Multimeter::DslSpecs'
       end
 
       it 'has a scope derived from the class name' do
-        Specs::ClassWithMetrics.new.multimeter_registry.scope.should == 'ClassWithMetrics'
+        DslSpecs::ClassWithMetrics.new.multimeter_registry.scope.should == 'ClassWithMetrics'
       end
     end
 
     context 'with customizations' do
       it 'allows the group to be overridden' do
-        Specs::ClassWithCustomGroup.new.multimeter_registry.group.should == 'a_very_special_group'
+        DslSpecs::ClassWithCustomGroup.new.multimeter_registry.group.should == 'a_very_special_group'
       end
 
       it 'allows the scope to be overridden' do
-        Specs::ClassWithCustomScope.new.multimeter_registry.scope.should == 'a_scope_unlinke_other_scopes'
+        DslSpecs::ClassWithCustomScope.new.multimeter_registry.scope.should == 'a_scope_unlinke_other_scopes'
       end
     end
   
     context 'with gauges' do
       it 'runs the gauge in class context when the metrics are class scoped' do
-        Specs::ClassWithGauge.set_a_value = 42
-        i1 = Specs::ClassWithGauge.new
-        i2 = Specs::ClassWithGauge.new
+        DslSpecs::ClassWithGauge.set_a_value = 42
+        i1 = DslSpecs::ClassWithGauge.new
+        i2 = DslSpecs::ClassWithGauge.new
         i1.current_value.value.should == 42
         i2.current_value.value.should == 42
       end
 
       it 'runs the gauge in instance context when the metrics are instance scoped' do
-        i1 = Specs::ClassWithInstanceGauge.new
-        i2 = Specs::ClassWithInstanceGauge.new
+        i1 = DslSpecs::ClassWithInstanceGauge.new
+        i2 = DslSpecs::ClassWithInstanceGauge.new
         i1.set_a_value = 42
         i2.set_a_value = 43
         i1.current_value.value.should == 42

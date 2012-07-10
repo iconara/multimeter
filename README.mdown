@@ -32,7 +32,7 @@ There are a number of ways to use Multimeter
 
 In this setup the instrumentation is shared among all instances of the `MyWorker` class, so you'll get the total count and the global mean duration among all instances, if you create more than one.
 
-If you want to instrument each instance separately you can include `Multimeter::InstanceMetrics` instead.
+If you want to instrument each instance separately you can include `Multimeter::InstanceMetrics` instead. _Please not that when you use `Multimeter::InstanceMetrics` (or `Multimeter::LinkedInstanceMetrics`) it's very important that you make sure to call `super` in `#initialize`, otherwise the metrics aren't set up properly` -- and if you use `#instance_id` you absolutely must call `super` after you've initialized any instance variables that `instance_id` depends on_.
 
 The metrics are grouped together using a group and type name derived from the "package" and class name of the instrumented class. This is only relevant when you enable reporting. If you use instance instrumentation the object ID is appended to the class name.
 
