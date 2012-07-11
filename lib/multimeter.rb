@@ -304,15 +304,42 @@ module Multimeter
 
   module Http
     def http!(rack_handler, options={})
-      app = proc do |env|
-        [200, {}, [self.to_h.to_json]]
-      end
       server_thread = JavaConcurrency::Thread.new do
-        rack_handler.run(app, options)
+        rack_handler.run(create_app(self), options)
       end
       server_thread.daemon = true
       server_thread.name = 'multimeter-http-server'
       server_thread.start
+    end
+
+    private
+
+    class BadRequest < StandardError; end
+
+    JSON_HEADERS = {'Content-Type' => 'application/json'}.freeze
+    JSONP_HEADERS = {'Content-Type' => 'application/javascript'}.freeze
+    ERROR_HEADERS = {'Content-Type' => 'text/plain'}.freeze
+
+    def create_app(registry)
+      proc do |env|
+        begin
+          body = registry.to_h.to_json
+          headers = JSON_HEADERS
+          if (callback_name = env['QUERY_STRING'][/callback=([^$&]+)/, 1])
+            if callback_name =~ /^[\w\d]+$/
+              body = "#{callback_name}(#{body});"
+              headers = JSONP_HEADERS
+            else
+              raise BadRequest
+            end
+          end
+          [200, headers, [body]]
+        rescue BadRequest => e
+          [400, ERROR_HEADERS, ['Bad Request']]
+        rescue => e
+          [500, ERROR_HEADERS, ['Internal Server Error']]
+        end
+      end
     end
   end
 
