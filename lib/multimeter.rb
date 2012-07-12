@@ -326,7 +326,7 @@ module Multimeter
           body = registry.to_h.to_json
           headers = JSON_HEADERS
           if (callback_name = env['QUERY_STRING'][/callback=([^$&]+)/, 1])
-            if callback_name =~ /^[\w\d]+$/
+            if callback_name =~ /^[\w\d.]+$/
               body = "#{callback_name}(#{body});"
               headers = JSONP_HEADERS
             else
