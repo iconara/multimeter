@@ -50,6 +50,13 @@ module Yammer::Metrics
     end
 
     describe Timer do
+      describe '#measure' do
+        it 'returns the value of the block' do
+          t = registry.timer(:timer)
+          t.measure { 42 }.should == 42
+        end
+      end
+
       describe '#to_h' do
         it 'returns a hash representation of the timer' do
           t = registry.timer(:some_timer)
