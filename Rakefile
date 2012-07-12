@@ -9,5 +9,5 @@ task :release do
     system %(git tag -a #{version_string} -m #{version_string})
   end
   system %(git push && git push --tags)
-  system %(gem build multimeter.gemspec && gem inabox multimeter-*.gem && mv multimeter-*.gem pkg)
+  system %(gem build multimeter.gemspec && gem push multimeter-*.gem && mv multimeter-*.gem pkg)
 end
