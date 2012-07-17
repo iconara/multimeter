@@ -63,7 +63,7 @@ module Yammer
           :mean => mean,
           :std_dev => std_dev,
           :sum => sum
-        }
+        }.merge(snapshot.to_h)
       end
     end
 
@@ -99,7 +99,7 @@ module Yammer
           :mean => mean,
           :std_dev => std_dev,
           :sum => sum
-        }
+        }.merge(snapshot.to_h)
       end
 
       def measure
@@ -111,14 +111,29 @@ module Yammer
         end
       end
     end
+
+    class Snapshot
+      def to_h
+        {
+          :median => median,
+          :percentiles => {
+            '75'   => get75thPercentile,
+            '95'   => get95thPercentile,
+            '98'   => get98thPercentile,
+            '99'   => get99thPercentile,
+            '99.9' => get999thPercentile
+          }
+        }
+      end
+    end
   end
 end
 
 module JavaConcurrency
-  import 'java.util.concurrent.TimeUnit'
-  import 'java.util.concurrent.ConcurrentHashMap'
-  import 'java.util.concurrent.atomic.AtomicReference'
-  import 'java.lang.Thread'
+  java_import 'java.util.concurrent.TimeUnit'
+  java_import 'java.util.concurrent.ConcurrentHashMap'
+  java_import 'java.util.concurrent.atomic.AtomicReference'
+  java_import 'java.lang.Thread'
 end
 
 module Multimeter

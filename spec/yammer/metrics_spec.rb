@@ -46,6 +46,12 @@ module Yammer::Metrics
         h[:mean].should be_a(Numeric)
         h[:std_dev].should be_a(Numeric)
         h[:sum].should be_a(Numeric)
+        h[:median].should be_a(Numeric)
+        h[:percentiles]['75'].should be_a(Numeric)
+        h[:percentiles]['95'].should be_a(Numeric)
+        h[:percentiles]['98'].should be_a(Numeric)
+        h[:percentiles]['99'].should be_a(Numeric)
+        h[:percentiles]['99.9'].should be_a(Numeric)
       end
     end
 
@@ -74,6 +80,12 @@ module Yammer::Metrics
           h[:mean].should be_a(Numeric)
           h[:std_dev].should be_a(Numeric)
           h[:sum].should be_a(Numeric)
+          h[:median].should be_a(Numeric)
+          h[:percentiles]['75'].should be_a(Numeric)
+          h[:percentiles]['95'].should be_a(Numeric)
+          h[:percentiles]['98'].should be_a(Numeric)
+          h[:percentiles]['99'].should be_a(Numeric)
+          h[:percentiles]['99.9'].should be_a(Numeric)
         end
       end
     end
