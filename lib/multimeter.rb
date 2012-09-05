@@ -332,9 +332,10 @@ module Multimeter
 
     class BadRequest < StandardError; end
 
-    JSON_HEADERS = {'Content-Type' => 'application/json'}.freeze
-    JSONP_HEADERS = {'Content-Type' => 'application/javascript'}.freeze
-    ERROR_HEADERS = {'Content-Type' => 'text/plain'}.freeze
+    COMMON_HEADERS = {'Connection' => 'close'}.freeze
+    JSON_HEADERS = COMMON_HEADERS.merge('Content-Type' => 'application/json').freeze
+    JSONP_HEADERS = COMMON_HEADERS.merge('Content-Type' => 'application/javascript').freeze
+    ERROR_HEADERS = COMMON_HEADERS.merge('Content-Type' => 'text/plain').freeze
 
     def create_app(registry)
       proc do |env|
