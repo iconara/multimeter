@@ -171,9 +171,7 @@ module Multimeter
         i2.do_stuff
         all_registries = Multimeter.global_registry.sub_registries
         instance_registries = all_registries.select { |r| r.scope.start_with?('ClassWithLinkedInstanceMetrics') }
-        instance_registries.should have(2).items
-        instance_registries[0].get(:stuff).count.should == 2
-        instance_registries[1].get(:stuff).count.should == 1
+        instance_registries.map { |x| x.get(:stuff).count }.sort.should == [1,2]
       end
     end
   

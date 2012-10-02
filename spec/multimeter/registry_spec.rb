@@ -144,7 +144,13 @@ module Multimeter
           'the_scope' => {
             :stuff => {
               :type => :aggregate,
-              :total => {:type => :counter, :count => 6},
+              :total => {:type => :counter, :count => {
+                  :min => 1,
+                  :max => 3,
+                  :sum => 1 + 2 + 3,
+                  :avg => 6/3.0
+                }
+              },
               :parts => {
                 '1' => {:type => :counter, :count => 2},
                 '2' => {:type => :counter, :count => 1},

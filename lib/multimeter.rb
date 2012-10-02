@@ -527,36 +527,23 @@ module Multimeter
       types.first
     end
 
-    COMPUTATIONS = {
-      :max => :max,
-      :min => :min,
-      :type => :first,
-      :event_type => :first,
-      :count => :sum,
-      :sum => :sum,
-      :mean => :avg,
-      :mean_rate => :avg,
-      :one_minute_rate => :avg,
-      :five_minute_rate => :avg,
-      :fifteen_minute_rate => :avg,
-      :std_dev => :avg,
-      :value => :avg
-    }.freeze
-
     def compute_total
       h = {}
       metric_hs = @metrics.values.map(&:to_h)
       metric_hs.first.keys.each do |property|
         values = metric_hs.map { |h| h[property] }
         aggregate_value = begin
-          case COMPUTATIONS[property]
-          when :first then values.first
-          when :max   then values.max
-          when :min   then values.min
-          when :sum   then values.reduce(:+)
-          when :avg   then values.reduce(:+)/values.size.to_f
-          else
-            raise "Don't know how to aggregate #{property}"
+          case property
+          when :type, :event_type then values.first
+          else 
+            min, max = values.minmax
+            sum = values.reduce(:+)
+            {
+              :max => max,
+              :min => min,
+              :sum => sum,
+              :avg => sum/values.size.to_f,
+            }
           end
         end
         h[property] = aggregate_value
