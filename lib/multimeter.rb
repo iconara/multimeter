@@ -535,6 +535,7 @@ module Multimeter
         aggregate_value = begin
           case property
           when :type, :event_type then values.first
+          when :percentiles then nil
           else 
             min, max = values.minmax
             sum = values.reduce(:+)
@@ -546,7 +547,7 @@ module Multimeter
             }
           end
         end
-        h[property] = aggregate_value
+        h[property] = aggregate_value if aggregate_value
       end
       h
     end
