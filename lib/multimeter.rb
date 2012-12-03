@@ -417,10 +417,14 @@ module Multimeter
     end
 
     def gauge(name, options={}, &block)
-      if get(name) && block_given?
+      existing_gauge = get(name)
+      if block_given? && existing_gauge.respond_to?(:same?) && existing_gauge.same?(block)
+        return
+      elsif existing_gauge && block_given?
         raise ArgumentError, %(Cannot redeclare gauge #{name})
+      else
+        @registry.new_gauge(create_name(name), ProcGauge.new(block))
       end
-      @registry.new_gauge(create_name(name), ProcGauge.new(block))
     end
 
     def counter(name, options={})
@@ -561,6 +565,10 @@ module Multimeter
 
     def value
       @proc.call
+    end
+
+    def same?(other_proc)
+      other_proc.source_location == @proc.source_location
     end
   end
 

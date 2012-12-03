@@ -18,6 +18,30 @@ module Multimeter
         counter.inc
       end
     end
+
+    class ClassWithLinkedInstanceMetrics
+      include LinkedInstanceMetrics
+
+      instance_id { "instance-#{@id}" }
+      scope :example
+      counter :count
+      gauge :current do
+        value
+      end
+
+      def initialize(id)
+        @id = id
+        super
+      end
+
+      def c!
+        count.inc
+      end
+
+      def value
+        count.count
+      end
+    end
   end
 
   describe Registry do
@@ -58,6 +82,13 @@ module Multimeter
       it 'uses the value returned by the instance_id pragma' do
         i1 = RegistrySpecs::ClassWithInstanceMetrics.new(3)
         i1.multimeter_registry.instance_id.should == 3
+      end
+
+      it 'shares registries when two linked instances have the same ID' do
+        first = RegistrySpecs::ClassWithLinkedInstanceMetrics.new(3)
+        second = RegistrySpecs::ClassWithLinkedInstanceMetrics.new(3)
+        first.c!
+        second.current.value.should == 1
       end
     end
 
