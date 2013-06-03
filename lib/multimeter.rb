@@ -349,6 +349,8 @@ module Multimeter
             else
               raise BadRequest
             end
+          else
+            headers = headers.merge('Access-Control-Allow-Origin' => '*')
           end
           [200, headers, [body]]
         rescue BadRequest => e

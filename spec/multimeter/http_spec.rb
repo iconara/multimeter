@@ -46,6 +46,12 @@ module Multimeter
           headers['Connection'].should == 'close'
         end
 
+        it 'responds with CORS headers' do
+          app, _ = extract_app
+          _, headers, _ = app.call({'QUERY_STRING' => ''})
+          headers['Access-Control-Allow-Origin'].should == '*'
+        end
+
         context 'JSONP' do
           it 'responds with a JSON document wrapped in a function call when the callback parameter is given' do
             app, options = extract_app
