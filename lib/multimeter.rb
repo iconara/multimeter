@@ -1,8 +1,5 @@
 # encoding: utf-8
 
-$: << File.expand_path('../../../jar-gems/slf4j-jars/lib', __FILE__)
-$: << File.expand_path('../../../jar-gems/metrics-core-jars/lib', __FILE__)
-
 require 'metrics-core-jars'
 require 'json'
 
