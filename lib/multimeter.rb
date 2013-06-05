@@ -311,7 +311,9 @@ module Multimeter
 
   module Jmx
     def jmx!
-      ::Yammer::Metrics::JmxReporter.start_default(@registry)
+      return if @jmx_reporter
+      @jmx_reporter = ::Yammer::Metrics::JmxReporter.new(@registry)
+      @jmx_reporter.start
     end
   end
 
