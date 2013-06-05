@@ -310,10 +310,15 @@ module Multimeter
   end
 
   module Jmx
-    def jmx!
+    def jmx!(options={})
       return if @jmx_reporter
       @jmx_reporter = ::Yammer::Metrics::JmxReporter.new(@registry)
       @jmx_reporter.start
+      if options[:recursive]
+        sub_registries.each do |registry|
+          registry.jmx!
+        end
+      end
     end
   end
 
