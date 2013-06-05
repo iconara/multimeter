@@ -574,5 +574,5 @@ module Multimeter
     end
   end
 
-  GLOBAL_REGISTRY = registry('global', 'global')
+  GLOBAL_REGISTRY = registry('multimeter', 'global')
 end
