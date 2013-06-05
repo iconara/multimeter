@@ -319,12 +319,13 @@ module Multimeter
 
   module Http
     def http!(rack_handler, options={})
-      server_thread = JavaConcurrency::Thread.new do
+      return if @server_thread
+      @server_thread = JavaConcurrency::Thread.new do
         rack_handler.run(create_app(self), options)
       end
-      server_thread.daemon = true
-      server_thread.name = 'multimeter-http-server'
-      server_thread.start
+      @server_thread.daemon = true
+      @server_thread.name = 'multimeter-http-server'
+      @server_thread.start
     end
 
     private
