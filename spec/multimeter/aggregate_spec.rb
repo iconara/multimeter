@@ -244,6 +244,22 @@ module Multimeter
         a = Aggregate.new(1 => c1, 2 => c2)
         a.to_h[:parts].should have_key('1')
       end
+
+      it 'handles the case when some values are nil' do
+        t1 = stub(:counter, :type => :counter, :to_h => {:type => :counter, :count => 1})
+        t2 = stub(:counter, :type => :counter, :to_h => {:type => :counter, :count => nil})
+        t3 = stub(:counter, :type => :counter, :to_h => {:type => :counter, :count => 3})
+        a = Aggregate.new('i1' => t1, 'i2' => t2, 'i3' => t3)
+        p a.to_h[:total][:count].should == {:max => 3, :min => 1, :sum => 4, :avg => 4/3.0}
+      end
+
+      it 'handles the case when all values are nil' do
+        t1 = stub(:counter, :type => :counter, :to_h => {:type => :counter, :count => nil})
+        t2 = stub(:counter, :type => :counter, :to_h => {:type => :counter, :count => nil})
+        t3 = stub(:counter, :type => :counter, :to_h => {:type => :counter, :count => nil})
+        a = Aggregate.new('i1' => t1, 'i2' => t2, 'i3' => t3)
+        p a.to_h[:total][:count].should == {:max => nil, :min => nil, :sum => nil, :avg => nil}
+      end
     end
   end
 end

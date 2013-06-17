@@ -548,13 +548,13 @@ module Multimeter
           when :type, :event_type then values.first
           when :percentiles then nil
           else 
-            min, max = values.minmax
-            sum = values.reduce(:+)
+            min, max = values.compact.minmax
+            sum = values.compact.reduce(:+)
             {
               :max => max,
               :min => min,
               :sum => sum,
-              :avg => sum/values.size.to_f,
+              :avg => sum ? sum/values.size.to_f : nil,
             }
           end
         end
