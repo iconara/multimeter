@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    multimeter (1.1.4-java)
+    multimeter (1.1.5-java)
       json
       metrics-core-jars
 
