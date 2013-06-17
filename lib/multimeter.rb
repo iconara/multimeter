@@ -361,7 +361,7 @@ module Multimeter
         rescue BadRequest => e
           [400, ERROR_HEADERS, ['Bad Request']]
         rescue => e
-          [500, ERROR_HEADERS, ['Internal Server Error']]
+          [500, ERROR_HEADERS, ["Internal Server Error\n\n", e.message, "\n\t", *e.backtrace.join("\n\t")]]
         end
       end
     end
