@@ -159,6 +159,22 @@ module Multimeter
         }
       end
 
+      it "doesn't merge non-numerical gauges" do
+        g1 = registry.gauge(:g1) { '' }
+        g2 = registry.gauge(:g2) { [] }
+        g3 = registry.gauge(:g3) { {} }
+        a = Aggregate.new('i1' => g1, 'i2' => g2, 'i3' => g3)
+        a.to_h.should == {
+          :type => :aggregate,
+          :total => {:type => :gauge},
+          :parts => {
+            'i1' => {:type => :gauge, :value => ''},
+            'i2' => {:type => :gauge, :value => []},
+            'i3' => {:type => :gauge, :value => {}}
+          }
+        }
+      end
+
       it 'merges timers by picking the first type and event type, calculating min, max, sum and avg of the other properties and discards percentiles' do
         t1 = stub(:timer1, :type => :timer, :to_h => {:type => :timer, :event_type => 'some_event', :count => 1, :mean_rate => 0.3, :one_minute_rate => 0.1, :five_minute_rate => 0.01, :fifteen_minute_rate => 0.9, :mean => 0.5, :max => 3, :min => 3, :std_dev => 0.5, :sum =>  9, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9}})
         t2 = stub(:timer2, :type => :timer, :to_h => {:type => :timer, :event_type => 'some_event', :count => 2, :mean_rate => 0.2, :one_minute_rate => 0.2, :five_minute_rate => 0.04, :fifteen_minute_rate => 0.2, :mean => 0.4, :max => 4, :min => 0, :std_dev => 0.4, :sum => 11, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9}})
