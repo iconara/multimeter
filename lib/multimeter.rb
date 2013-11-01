@@ -547,15 +547,17 @@ module Multimeter
           case property
           when :type, :event_type then values.first
           when :percentiles then nil
-          else 
-            min, max = values.compact.minmax
-            sum = values.compact.reduce(:+)
-            {
-              :max => max,
-              :min => min,
-              :sum => sum,
-              :avg => sum ? sum/values.size.to_f : nil,
-            }
+          else
+            if values.all? { |v| v.nil? || v.is_a?(Numeric) }
+              min, max = values.compact.minmax
+              sum = values.compact.reduce(:+)
+              {
+                :max => max,
+                :min => min,
+                :sum => sum,
+                :avg => sum ? sum.fdiv(values.size) : nil,
+              }
+            end
           end
         end
         h[property] = aggregate_value if aggregate_value
