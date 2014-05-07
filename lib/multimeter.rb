@@ -23,7 +23,6 @@ module Yammer
       def to_h
         {
           :type => :meter,
-          :event_type => event_type,
           :count => count,
           :mean_rate => mean_rate,
           :one_minute_rate => one_minute_rate,
@@ -85,7 +84,6 @@ module Yammer
       def to_h
         {
           :type => :timer,
-          :event_type => event_type,
           :count => count,
           :mean_rate => mean_rate,
           :one_minute_rate => one_minute_rate,
@@ -540,7 +538,7 @@ module Multimeter
         values = metric_hs.map { |h| h[property] }
         aggregate_value = begin
           case property
-          when :type, :event_type then values.first
+          when :type then values.first
           when :percentiles then nil
           else
             if values.all? { |v| v.nil? || v.is_a?(Numeric) }

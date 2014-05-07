@@ -34,16 +34,15 @@ module Multimeter
         }
       end
 
-      it 'merges meters by picking the first event type, calculating min, max, sum and avg of the other properties' do
-        m1 = stub(:meter1, :type => :meter, :to_h => {:type => :meter, :event_type => 'some_event', :count => 1, :mean_rate => 0.3, :one_minute_rate => 0.1, :five_minute_rate => 0.01, :fifteen_minute_rate => 0.9})
-        m2 = stub(:meter2, :type => :meter, :to_h => {:type => :meter, :event_type => 'some_event', :count => 2, :mean_rate => 0.2, :one_minute_rate => 0.2, :five_minute_rate => 0.04, :fifteen_minute_rate => 0.2})
-        m3 = stub(:meter3, :type => :meter, :to_h => {:type => :meter, :event_type => 'some_event', :count => 4, :mean_rate => 0.4, :one_minute_rate => 0.5, :five_minute_rate => 0.03, :fifteen_minute_rate => 0.4})
+      it 'merges meters by calculating min, max, sum and avg of the other properties' do
+        m1 = stub(:meter1, :type => :meter, :to_h => {:type => :meter, :count => 1, :mean_rate => 0.3, :one_minute_rate => 0.1, :five_minute_rate => 0.01, :fifteen_minute_rate => 0.9})
+        m2 = stub(:meter2, :type => :meter, :to_h => {:type => :meter, :count => 2, :mean_rate => 0.2, :one_minute_rate => 0.2, :five_minute_rate => 0.04, :fifteen_minute_rate => 0.2})
+        m3 = stub(:meter3, :type => :meter, :to_h => {:type => :meter, :count => 4, :mean_rate => 0.4, :one_minute_rate => 0.5, :five_minute_rate => 0.03, :fifteen_minute_rate => 0.4})
         a = Aggregate.new('i1' => m1, 'i2' => m2, 'i3' => m3)
         a.to_h.should == {
           :type => :aggregate,
           :total => {
             :type => :meter,
-            :event_type => 'some_event',
             :count => {
                 :min => 1,
                 :max => 4,
@@ -175,16 +174,15 @@ module Multimeter
         }
       end
 
-      it 'merges timers by picking the first type and event type, calculating min, max, sum and avg of the other properties and discards percentiles' do
-        t1 = stub(:timer1, :type => :timer, :to_h => {:type => :timer, :event_type => 'some_event', :count => 1, :mean_rate => 0.3, :one_minute_rate => 0.1, :five_minute_rate => 0.01, :fifteen_minute_rate => 0.9, :mean => 0.5, :max => 3, :min => 3, :std_dev => 0.5, :sum =>  9, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9}})
-        t2 = stub(:timer2, :type => :timer, :to_h => {:type => :timer, :event_type => 'some_event', :count => 2, :mean_rate => 0.2, :one_minute_rate => 0.2, :five_minute_rate => 0.04, :fifteen_minute_rate => 0.2, :mean => 0.4, :max => 4, :min => 0, :std_dev => 0.4, :sum => 11, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9}})
-        t3 = stub(:timer3, :type => :timer, :to_h => {:type => :timer, :event_type => 'some_event', :count => 4, :mean_rate => 0.4, :one_minute_rate => 0.5, :five_minute_rate => 0.03, :fifteen_minute_rate => 0.4, :mean => 0.3, :max => 5, :min => 1, :std_dev => 0.9, :sum => 10}, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9})
+      it 'merges timers by calculating min, max, sum and avg of the other properties and discards percentiles' do
+        t1 = stub(:timer1, :type => :timer, :to_h => {:type => :timer, :count => 1, :mean_rate => 0.3, :one_minute_rate => 0.1, :five_minute_rate => 0.01, :fifteen_minute_rate => 0.9, :mean => 0.5, :max => 3, :min => 3, :std_dev => 0.5, :sum =>  9, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9}})
+        t2 = stub(:timer2, :type => :timer, :to_h => {:type => :timer, :count => 2, :mean_rate => 0.2, :one_minute_rate => 0.2, :five_minute_rate => 0.04, :fifteen_minute_rate => 0.2, :mean => 0.4, :max => 4, :min => 0, :std_dev => 0.4, :sum => 11, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9}})
+        t3 = stub(:timer3, :type => :timer, :to_h => {:type => :timer, :count => 4, :mean_rate => 0.4, :one_minute_rate => 0.5, :five_minute_rate => 0.03, :fifteen_minute_rate => 0.4, :mean => 0.3, :max => 5, :min => 1, :std_dev => 0.9, :sum => 10}, :percentiles => {'75' => 75.0, '95' => 95.0, '98' => 98.0, '99' => 99.0, '99.9' => 99.9})
         a = Aggregate.new('i1' => t1, 'i2' => t2, 'i3' => t3)
         a.to_h.should == {
           :type => :aggregate,
           :total => {
             :type => :timer,
-            :event_type => 'some_event',
             :count => {
               :min => 1,
               :max => 4,

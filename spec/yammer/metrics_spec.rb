@@ -20,11 +20,10 @@ module Yammer::Metrics
     describe Meter do
       describe '#to_h' do
         it 'returns a hash representation of the meter' do
-          m = registry.meter(:some_meter, :event_type => 'stuff')
+          m = registry.meter(:some_meter)
           m.mark
           h = m.to_h
           h[:type].should == :meter
-          h[:event_type].should == 'stuff'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
           h[:one_minute_rate].should be_a(Numeric)
@@ -69,7 +68,6 @@ module Yammer::Metrics
           t.measure { }
           h = t.to_h
           h[:type].should == :timer
-          h[:event_type].should == 'calls'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
           h[:one_minute_rate].should be_a(Numeric)
