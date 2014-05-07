@@ -4,7 +4,7 @@ require 'metrics-core-jars'
 require 'json'
 
 
-module Yammer
+module Codahale
   module Metrics
     java_import 'com.codahale.metrics.MetricRegistry'
     java_import 'com.codahale.metrics.Meter'
@@ -367,7 +367,7 @@ module Multimeter
 
     def initialize(*args)
       @group, @scope, @instance_id = args
-      @registry = ::Yammer::Metrics::MetricRegistry.new
+      @registry = ::Codahale::Metrics::MetricRegistry.new
       @sub_registries = JavaConcurrency::ConcurrentHashMap.new
     end
 
@@ -554,7 +554,7 @@ module Multimeter
   end
 
   class ProcGauge
-    include ::Yammer::Metrics::Gauge
+    include ::Codahale::Metrics::Gauge
 
     def initialize(proc)
       @proc = proc

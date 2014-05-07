@@ -1,8 +1,8 @@
 require_relative '../spec_helper'
 
 
-module Yammer::Metrics
-  describe Yammer::Metrics do
+module Codahale::Metrics
+  describe Codahale::Metrics do
     let :registry do
       Multimeter.registry('a_group', 'some_type')
     end
