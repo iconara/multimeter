@@ -6,15 +6,14 @@ require 'json'
 
 module Yammer
   module Metrics
-    java_import 'com.yammer.metrics.core.MetricsRegistry'
-    java_import 'com.yammer.metrics.core.MetricName'
-    java_import 'com.yammer.metrics.core.Meter'
-    java_import 'com.yammer.metrics.core.Counter'
-    java_import 'com.yammer.metrics.core.Histogram'
-    java_import 'com.yammer.metrics.core.Gauge'
-    java_import 'com.yammer.metrics.core.Timer'
-    java_import 'com.yammer.metrics.stats.Snapshot'
-    java_import 'com.yammer.metrics.reporting.JmxReporter'
+    java_import 'com.codahale.metrics.MetricRegistry'
+    java_import 'com.codahale.metrics.Meter'
+    java_import 'com.codahale.metrics.Counter'
+    java_import 'com.codahale.metrics.Histogram'
+    java_import 'com.codahale.metrics.Gauge'
+    java_import 'com.codahale.metrics.Timer'
+    java_import 'com.codahale.metrics.Snapshot'
+    # java_import 'com.codahale.metrics.JmxReporter'
 
     class Meter
       def type
