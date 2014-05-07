@@ -497,7 +497,7 @@ module Multimeter
     }.freeze
 
     def create_name(name)
-      ::Yammer::Metrics::MetricName.new(@group, @scope, name.to_s)
+      name.to_s
     end
 
     def error_translation
