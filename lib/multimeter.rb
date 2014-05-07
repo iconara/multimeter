@@ -375,7 +375,7 @@ module Multimeter
 
     def initialize(*args)
       @group, @scope, @instance_id = args
-      @registry = ::Yammer::Metrics::MetricsRegistry.new
+      @registry = ::Yammer::Metrics::MetricRegistry.new
       @sub_registries = JavaConcurrency::ConcurrentHashMap.new
     end
 
