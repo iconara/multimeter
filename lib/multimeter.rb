@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require 'metrics-core-jars'
+require 'slf4j-jars'
 require 'json'
 
 
@@ -13,7 +14,7 @@ module Codahale
     java_import 'com.codahale.metrics.Gauge'
     java_import 'com.codahale.metrics.Timer'
     java_import 'com.codahale.metrics.Snapshot'
-    # java_import 'com.codahale.metrics.JmxReporter'
+    java_import 'com.codahale.metrics.JmxReporter'
 
     class Meter
       def type
@@ -303,7 +304,7 @@ module Multimeter
   module Jmx
     def jmx!(options={})
       return if @jmx_reporter
-      @jmx_reporter = ::Yammer::Metrics::JmxReporter.new(@registry)
+      @jmx_reporter = ::Codahale::Metrics::JmxReporter.for_registry(@registry).build
       @jmx_reporter.start
       if options[:recursive]
         sub_registries.each do |registry|
