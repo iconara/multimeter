@@ -428,7 +428,7 @@ module Multimeter
 
     def counter(name, options={})
       error_translation do
-        @registry.counter create_name(name)
+        @registry.counter(create_name(name))
       end
     end
 
