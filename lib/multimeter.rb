@@ -1,20 +1,20 @@
 # encoding: utf-8
 
 require 'metrics-core-jars'
+require 'slf4j-jars'
 require 'json'
 
 
-module Yammer
+module Codahale
   module Metrics
-    java_import 'com.yammer.metrics.core.MetricsRegistry'
-    java_import 'com.yammer.metrics.core.MetricName'
-    java_import 'com.yammer.metrics.core.Meter'
-    java_import 'com.yammer.metrics.core.Counter'
-    java_import 'com.yammer.metrics.core.Histogram'
-    java_import 'com.yammer.metrics.core.Gauge'
-    java_import 'com.yammer.metrics.core.Timer'
-    java_import 'com.yammer.metrics.stats.Snapshot'
-    java_import 'com.yammer.metrics.reporting.JmxReporter'
+    java_import 'com.codahale.metrics.MetricRegistry'
+    java_import 'com.codahale.metrics.Meter'
+    java_import 'com.codahale.metrics.Counter'
+    java_import 'com.codahale.metrics.Histogram'
+    java_import 'com.codahale.metrics.Gauge'
+    java_import 'com.codahale.metrics.Timer'
+    java_import 'com.codahale.metrics.Snapshot'
+    java_import 'com.codahale.metrics.JmxReporter'
 
     class Meter
       def type
@@ -24,7 +24,6 @@ module Yammer
       def to_h
         {
           :type => :meter,
-          :event_type => event_type,
           :count => count,
           :mean_rate => mean_rate,
           :one_minute_rate => one_minute_rate,
@@ -56,16 +55,11 @@ module Yammer
         {
           :type => :histogram,
           :count => count,
-          :max => max,
-          :min => min,
-          :mean => mean,
-          :std_dev => std_dev,
-          :sum => sum
         }.merge(snapshot.to_h)
       end
     end
 
-    class Gauge
+    module Gauge
       def type
         :gauge
       end
@@ -86,17 +80,11 @@ module Yammer
       def to_h
         {
           :type => :timer,
-          :event_type => event_type,
           :count => count,
           :mean_rate => mean_rate,
           :one_minute_rate => one_minute_rate,
           :five_minute_rate => five_minute_rate,
           :fifteen_minute_rate => fifteen_minute_rate,
-          :max => max,
-          :min => min,
-          :mean => mean,
-          :std_dev => std_dev,
-          :sum => sum
         }.merge(snapshot.to_h)
       end
 
@@ -113,6 +101,10 @@ module Yammer
     class Snapshot
       def to_h
         {
+          :max => max,
+          :min => min,
+          :mean => mean,
+          :std_dev => std_dev,
           :median => median,
           :percentiles => {
             '75'   => get75thPercentile,
@@ -312,7 +304,7 @@ module Multimeter
   module Jmx
     def jmx!(options={})
       return if @jmx_reporter
-      @jmx_reporter = ::Yammer::Metrics::JmxReporter.new(@registry)
+      @jmx_reporter = ::Codahale::Metrics::JmxReporter.for_registry(@registry).build
       @jmx_reporter.start
       if options[:recursive]
         sub_registries.each do |registry|
@@ -376,7 +368,7 @@ module Multimeter
 
     def initialize(*args)
       @group, @scope, @instance_id = args
-      @registry = ::Yammer::Metrics::MetricsRegistry.new
+      @registry = ::Codahale::Metrics::MetricRegistry.new
       @sub_registries = JavaConcurrency::ConcurrentHashMap.new
     end
 
@@ -402,14 +394,14 @@ module Multimeter
 
     def each_metric
       return self unless block_given?
-      @registry.all_metrics.each do |metric_name, metric|
-        yield metric_name.name, metric
+      @registry.metrics.each do |metric_name, metric|
+        yield metric_name, metric
       end
     end
     alias_method :each, :each_metric
 
     def get(name)
-      @registry.all_metrics[create_name(name)]
+      @registry.metrics[create_name(name)]
     end
 
     def find_metric(name)
@@ -430,35 +422,31 @@ module Multimeter
       elsif existing_gauge && block_given?
         raise ArgumentError, %(Cannot redeclare gauge #{name})
       else
-        @registry.new_gauge(create_name(name), ProcGauge.new(block))
+        existing_gauge || @registry.register(create_name(name), ProcGauge.new(block))
       end
     end
 
     def counter(name, options={})
       error_translation do
-        @registry.new_counter(create_name(name))
+        @registry.counter(create_name(name))
       end
     end
 
     def meter(name, options={})
       error_translation do
-        event_type = (options[:event_type] || '').to_s
-        time_unit = TIME_UNITS[options[:time_unit] || :seconds]
-        @registry.new_meter(create_name(name), event_type, time_unit)
+        @registry.meter(create_name(name))
       end
     end
 
     def histogram(name, options={})
       error_translation do
-        @registry.new_histogram(create_name(name), !!options[:biased])
+        @registry.histogram(create_name(name))
       end
     end
 
     def timer(name, options={})
       error_translation do
-        duration_unit = TIME_UNITS[options[:duration_unit] || :milliseconds]
-        rate_unit = TIME_UNITS[options[:rate_unit] || :seconds]
-        @registry.new_timer(create_name(name), duration_unit, rate_unit)
+        @registry.timer(create_name(name))
       end
     end
 
@@ -502,13 +490,13 @@ module Multimeter
     }.freeze
 
     def create_name(name)
-      ::Yammer::Metrics::MetricName.new(@group, @scope, name.to_s)
+      name.to_s
     end
 
     def error_translation
       begin
         yield
-      rescue java.lang.ClassCastException => cce
+      rescue java.lang.IllegalArgumentException
         raise ArgumentError, %(Cannot redeclare a metric as another type)
       end
     end
@@ -545,7 +533,7 @@ module Multimeter
         values = metric_hs.map { |h| h[property] }
         aggregate_value = begin
           case property
-          when :type, :event_type then values.first
+          when :type then values.first
           when :percentiles then nil
           else
             if values.all? { |v| v.nil? || v.is_a?(Numeric) }
@@ -566,9 +554,10 @@ module Multimeter
     end
   end
 
-  class ProcGauge < ::Yammer::Metrics::Gauge
+  class ProcGauge
+    include ::Codahale::Metrics::Gauge
+
     def initialize(proc)
-      super()
       @proc = proc
     end
 

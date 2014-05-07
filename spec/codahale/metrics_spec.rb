@@ -1,8 +1,8 @@
 require_relative '../spec_helper'
 
 
-module Yammer::Metrics
-  describe Yammer::Metrics do
+module Codahale::Metrics
+  describe Codahale::Metrics do
     let :registry do
       Multimeter.registry('a_group', 'some_type')
     end
@@ -20,11 +20,10 @@ module Yammer::Metrics
     describe Meter do
       describe '#to_h' do
         it 'returns a hash representation of the meter' do
-          m = registry.meter(:some_meter, :event_type => 'stuff')
+          m = registry.meter(:some_meter)
           m.mark
           h = m.to_h
           h[:type].should == :meter
-          h[:event_type].should == 'stuff'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
           h[:one_minute_rate].should be_a(Numeric)
@@ -45,7 +44,6 @@ module Yammer::Metrics
         h[:min].should be_a(Numeric)
         h[:mean].should be_a(Numeric)
         h[:std_dev].should be_a(Numeric)
-        h[:sum].should be_a(Numeric)
         h[:median].should be_a(Numeric)
         h[:percentiles]['75'].should be_a(Numeric)
         h[:percentiles]['95'].should be_a(Numeric)
@@ -69,7 +67,6 @@ module Yammer::Metrics
           t.measure { }
           h = t.to_h
           h[:type].should == :timer
-          h[:event_type].should == 'calls'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
           h[:one_minute_rate].should be_a(Numeric)
@@ -79,7 +76,6 @@ module Yammer::Metrics
           h[:min].should be_a(Numeric)
           h[:mean].should be_a(Numeric)
           h[:std_dev].should be_a(Numeric)
-          h[:sum].should be_a(Numeric)
           h[:median].should be_a(Numeric)
           h[:percentiles]['75'].should be_a(Numeric)
           h[:percentiles]['95'].should be_a(Numeric)
