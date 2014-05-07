@@ -503,7 +503,7 @@ module Multimeter
     def error_translation
       begin
         yield
-      rescue java.lang.ClassCastException => cce
+      rescue java.lang.IllegalArgumentException
         raise ArgumentError, %(Cannot redeclare a metric as another type)
       end
     end
