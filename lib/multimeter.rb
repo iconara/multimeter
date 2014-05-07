@@ -64,7 +64,7 @@ module Yammer
       end
     end
 
-    class Gauge
+    module Gauge
       def type
         :gauge
       end
@@ -565,9 +565,10 @@ module Multimeter
     end
   end
 
-  class ProcGauge < ::Yammer::Metrics::Gauge
+  class ProcGauge
+    include ::Yammer::Metrics::Gauge
+
     def initialize(proc)
-      super()
       @proc = proc
     end
 
