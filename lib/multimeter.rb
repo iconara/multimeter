@@ -429,35 +429,31 @@ module Multimeter
       elsif existing_gauge && block_given?
         raise ArgumentError, %(Cannot redeclare gauge #{name})
       else
-        @registry.new_gauge(create_name(name), ProcGauge.new(block))
+        existing_gauge || @registry.register(create_name(name), ProcGauge.new(block))
       end
     end
 
     def counter(name, options={})
       error_translation do
-        @registry.new_counter(create_name(name))
+        @registry.counter create_name(name)
       end
     end
 
     def meter(name, options={})
       error_translation do
-        event_type = (options[:event_type] || '').to_s
-        time_unit = TIME_UNITS[options[:time_unit] || :seconds]
-        @registry.new_meter(create_name(name), event_type, time_unit)
+        @registry.meter(create_name(name))
       end
     end
 
     def histogram(name, options={})
       error_translation do
-        @registry.new_histogram(create_name(name), !!options[:biased])
+        @registry.histogram(create_name(name))
       end
     end
 
     def timer(name, options={})
       error_translation do
-        duration_unit = TIME_UNITS[options[:duration_unit] || :milliseconds]
-        rate_unit = TIME_UNITS[options[:rate_unit] || :seconds]
-        @registry.new_timer(create_name(name), duration_unit, rate_unit)
+        @registry.timer(create_name(name))
       end
     end
 
