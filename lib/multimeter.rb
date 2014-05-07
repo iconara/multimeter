@@ -401,14 +401,14 @@ module Multimeter
 
     def each_metric
       return self unless block_given?
-      @registry.all_metrics.each do |metric_name, metric|
-        yield metric_name.name, metric
+      @registry.metrics.each do |metric_name, metric|
+        yield metric_name, metric
       end
     end
     alias_method :each, :each_metric
 
     def get(name)
-      @registry.all_metrics[create_name(name)]
+      @registry.metrics[create_name(name)]
     end
 
     def find_metric(name)
