@@ -54,11 +54,6 @@ module Yammer
         {
           :type => :histogram,
           :count => count,
-          :max => max,
-          :min => min,
-          :mean => mean,
-          :std_dev => std_dev,
-          :sum => sum
         }.merge(snapshot.to_h)
       end
     end
@@ -89,11 +84,6 @@ module Yammer
           :one_minute_rate => one_minute_rate,
           :five_minute_rate => five_minute_rate,
           :fifteen_minute_rate => fifteen_minute_rate,
-          :max => max,
-          :min => min,
-          :mean => mean,
-          :std_dev => std_dev,
-          :sum => sum
         }.merge(snapshot.to_h)
       end
 
@@ -110,6 +100,10 @@ module Yammer
     class Snapshot
       def to_h
         {
+          :max => max,
+          :min => min,
+          :mean => mean,
+          :std_dev => std_dev,
           :median => median,
           :percentiles => {
             '75'   => get75thPercentile,
