@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
 
   s.rubyforge_project = 'multimeter'
   
-  s.add_dependency 'metrics-core-jars'
+  s.add_dependency 'metrics-core-jars', '~> 2.1.2'
   s.add_dependency 'json'
   
   s.files         = FileList['lib/**/*.rb'].to_a
