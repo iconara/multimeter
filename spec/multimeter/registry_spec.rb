@@ -11,7 +11,7 @@ module Multimeter
 
       def initialize(id)
         @id = id
-        super
+        super()
       end
 
       def c!
@@ -31,7 +31,7 @@ module Multimeter
 
       def initialize(id)
         @id = id
-        super
+        super()
       end
 
       def c!
