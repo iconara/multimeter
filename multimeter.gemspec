@@ -15,9 +15,9 @@ Gem::Specification.new do |s|
   s.description = 'Multimeter provides a JRuby DSL for instrumenting your application. It uses Yammer\'s Metrics library under the hood.'
 
   s.rubyforge_project = 'multimeter'
-  
-  s.add_dependency 'metrics-core-jars'
-  
+
+  s.add_dependency 'metrics-core-jars', '~> 2.1.2'
+
   s.files         = FileList['lib/**/*.rb'].to_a
   s.require_paths = %w[lib]
 end
