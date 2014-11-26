@@ -1,12 +1,11 @@
-require_relative '../spec_helper'
+# encoding: utf-8
 
+require 'spec_helper'
 
 module Multimeter
-  describe Http do
+  describe 'Multimter.http!' do
     let :registry do
-      r = double(:registry)
-      r.extend(Http)
-      r
+      Multimeter.create_registry
     end
 
     context 'when handling requests' do
@@ -18,7 +17,7 @@ module Multimeter
           app, options = a, o
           barrier.release
         end
-        registry.http!(rack_handler)
+        Multimeter.http!(registry, rack_handler)
         barrier.try_acquire(5, java.util.concurrent.TimeUnit::SECONDS).should_not be_false
         [app, options]
       end

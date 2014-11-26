@@ -18,7 +18,55 @@ module Multimeter
 
     class MetricRegistry
       def gauge(name, &proc)
-        register(name, ProcGauge.new(proc))
+        error_translation do
+          register(name, ProcGauge.new(proc))
+        end
+      end
+
+      alias java_counter counter
+      def counter(name)
+        error_translation do
+          java_counter(name)
+        end
+      end
+
+      alias java_meter meter
+      def meter(name)
+        error_translation do
+          java_meter(name)
+        end
+      end
+
+      alias java_histogram histogram
+      def histogram(name)
+        error_translation do
+          java_histogram(name)
+        end
+      end
+
+      alias java_timer timer
+      def timer(name)
+        error_translation do
+          java_timer(name)
+        end
+      end
+
+      def to_h
+        h = {}
+        metrics.each do |metric_name, metric|
+          h[metric_name] = metric.to_h
+        end
+        h
+      end
+
+      private
+
+      def error_translation
+        begin
+          yield
+        rescue Java::JavaLang::IllegalArgumentException => iae
+          raise ArgumentError, iae.message, iae.backtrace
+        end
       end
     end
 
@@ -127,50 +175,28 @@ module Multimeter
 
     NANO_TO_MILLI = 1.0/1_000_000
   end
-end
 
-module JavaConcurrency
-  java_import 'java.util.concurrent.TimeUnit'
-  java_import 'java.util.concurrent.ConcurrentHashMap'
-  java_import 'java.util.concurrent.atomic.AtomicReference'
-  java_import 'java.lang.Thread'
-end
-
-module Multimeter
-  def self.global_registry
-    GLOBAL_REGISTRY
+  def self.create_registry
+    Metrics::MetricRegistry.new
   end
 
-  def self.registry(group, scope, instance_id=nil)
-    Registry.new(group, scope, instance_id)
+  def self.jmx!(registry, options = {})
+    Metrics::JmxReporter.forRegistry(registry).inDomain(options[:domain] || 'metrics').build.tap(&:start)
   end
 
-  module Jmx
-    def jmx!(options={})
-      return if @jmx_reporter
-      @jmx_reporter = Metrics::JmxReporter.new(@registry)
-      @jmx_reporter.start
-      if options[:recursive]
-        sub_registries.each do |registry|
-          registry.jmx!
-        end
-      end
+  def self.http!(registry, rack_handler, options={})
+    server_thread = Java::JavaLang::Thread.new do
+      rack_handler.run(Http.create_app(registry), options)
     end
+    server_thread.daemon = true
+    server_thread.name = 'multimeter-http-server'
+    server_thread.start
+    server_thread
   end
+
+  private
 
   module Http
-    def http!(rack_handler, options={})
-      return if @server_thread
-      @server_thread = JavaConcurrency::Thread.new do
-        rack_handler.run(create_app(self), options)
-      end
-      @server_thread.daemon = true
-      @server_thread.name = 'multimeter-http-server'
-      @server_thread.start
-    end
-
-    private
-
     class BadRequest < StandardError; end
 
     COMMON_HEADERS = {'Connection' => 'close'}.freeze
@@ -178,7 +204,7 @@ module Multimeter
     JSONP_HEADERS = COMMON_HEADERS.merge('Content-Type' => 'application/javascript').freeze
     ERROR_HEADERS = COMMON_HEADERS.merge('Content-Type' => 'text/plain').freeze
 
-    def create_app(registry)
+    def self.create_app(registry)
       proc do |env|
         begin
           body = registry.to_h.to_json
@@ -203,151 +229,6 @@ module Multimeter
     end
   end
 
-  class Registry
-    include Enumerable
-    include Jmx
-    include Http
-
-    attr_reader :group, :scope, :instance_id
-
-    def initialize(*args)
-      @group, @scope, @instance_id = args
-      @registry = Metrics::MetricRegistry.new
-      @sub_registries = JavaConcurrency::ConcurrentHashMap.new
-    end
-
-    def instance_registry?
-      !!@instance_id
-    end
-
-    def sub_registry(scope, instance_id=nil)
-      full_id = scope.dup
-      full_id << "/#{instance_id}" if instance_id
-      r = @sub_registries.get(full_id)
-      unless r
-        r = self.class.new(@group, scope, instance_id)
-        @sub_registries.put_if_absent(full_id, r)
-        r = @sub_registries.get(full_id)
-      end
-      r
-    end
-
-    def sub_registries
-      @sub_registries.values.to_a
-    end
-
-    def each_metric
-      return self unless block_given?
-      @registry.metrics.each do |metric_name, metric|
-        yield File.basename(metric_name), metric
-      end
-    end
-    alias_method :each, :each_metric
-
-    def get(name)
-      @registry.metrics[create_name(name)]
-    end
-
-    def find_metric(name)
-      m = get(name)
-      unless m
-        sub_registries.each do |registry|
-          m = registry.find_metric(name)
-          break if m
-        end
-      end
-      m
-    end
-
-    def gauge(name, options={}, &block)
-      existing_gauge = get(name)
-      if block_given? && existing_gauge.respond_to?(:same?) && existing_gauge.same?(block)
-        return
-      elsif existing_gauge && block_given?
-        raise ArgumentError, %(Cannot redeclare gauge #{name})
-      elsif block_given?
-        error_translation do
-          @registry.gauge(create_name(name), &block)
-        end
-      else
-        existing_gauge
-      end
-    end
-
-    def counter(name, options={})
-      error_translation do
-        @registry.counter(create_name(name))
-      end
-    end
-
-    def meter(name)
-      error_translation do
-        @registry.meter(create_name(name))
-      end
-    end
-
-    def histogram(name)
-      error_translation do
-        @registry.histogram(create_name(name))
-      end
-    end
-
-    def timer(name, options={})
-      error_translation do
-        @registry.timer(create_name(name))
-      end
-    end
-
-    def to_h
-      h = {@scope => {}}
-      each_metric do |metric_name, metric|
-        h[@scope][metric_name.to_sym] = metric.to_h
-      end
-      registries_by_scope = sub_registries.group_by { |r| r.scope }
-      registries_by_scope.each do |scope, registries|
-        if registries.size == 1
-          h.merge!(registries.first.to_h)
-        else
-          h[scope] = {}
-          registries_by_metric = Hash.new { |h, k| h[k] = [] }
-          registries.each do |registry|
-            registry.each_metric do |metric_name, _|
-              registries_by_metric[metric_name] << registry
-            end
-          end
-          registries_by_metric.each do |metric_name, registries|
-            h[scope][metric_name.to_sym] = registries.first.get(metric_name).to_h
-          end
-        end
-        h
-      end
-      h.delete_if { |k, v| v.empty? }
-      h
-    end
-
-    private
-
-    TIME_UNITS = {
-      :seconds      => JavaConcurrency::TimeUnit::SECONDS,
-      :milliseconds => JavaConcurrency::TimeUnit::MILLISECONDS
-    }.freeze
-
-    def create_name(name)
-      File.join(@group, @scope, name.to_s)
-    end
-
-    def error_translation
-      begin
-        yield
-      rescue java.lang.IllegalArgumentException => iae
-        raise ArgumentError, iae.message, iae.backtrace
-      rescue java.lang.ClassCastException => cce
-        raise ArgumentError, %(Cannot redeclare a metric as another type)
-      end
-    end
-  end
-
-
   class ProcGauge
     include Metrics::Gauge
 
@@ -358,11 +239,5 @@ module Multimeter
     def value
       @proc.call
     end
-
-    def same?(other_proc)
-      other_proc.source_location == @proc.source_location
-    end
   end
-
-  GLOBAL_REGISTRY = registry('multimeter', 'global')
 end
