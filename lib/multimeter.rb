@@ -316,12 +316,7 @@ module Multimeter
             end
           end
           registries_by_metric.each do |metric_name, registries|
-            if registries.size == 1
-              h[scope][metric_name.to_sym] = registries.first.get(metric_name).to_h
-            else
-              metrics_by_instance_id = Hash[registries.map { |r| [r.instance_id, r.get(metric_name)] }]
-              h[scope][metric_name.to_sym] = Aggregate.new(metrics_by_instance_id).to_h
-            end
+            h[scope][metric_name.to_sym] = registries.first.get(metric_name).to_h
           end
         end
         h
@@ -352,57 +347,6 @@ module Multimeter
     end
   end
 
-  class Aggregate
-    def initialize(metrics)
-      @metrics = metrics
-      @type = check_type!
-    end
-
-    def to_h
-      {
-        :type => :aggregate,
-        :total => compute_total,
-        :parts => Hash[@metrics.map { |k, v| [k.to_s, v.to_h] }]
-      }
-    end
-
-    private
-
-    def check_type!
-      types = @metrics.values.map(&:type).uniq
-      unless types.size == 1
-        raise ArgumentError, %[All metrics of an aggregate must be of the same type (they were: #{types.join(', ')})]
-      end
-      types.first
-    end
-
-    def compute_total
-      h = {}
-      metric_hs = @metrics.values.map(&:to_h)
-      metric_hs.first.keys.each do |property|
-        values = metric_hs.map { |h| h[property] }
-        aggregate_value = begin
-          case property
-          when :type, :event_type then values.first
-          when :percentiles then nil
-          else
-            if values.all? { |v| v.nil? || v.is_a?(Numeric) }
-              min, max = values.compact.minmax
-              sum = values.compact.reduce(:+)
-              {
-                :max => max,
-                :min => min,
-                :sum => sum,
-                :avg => sum ? sum.fdiv(values.size) : nil,
-              }
-            end
-          end
-        end
-        h[property] = aggregate_value if aggregate_value
-      end
-      h
-    end
-  end
 
   class ProcGauge
     include Metrics::Gauge

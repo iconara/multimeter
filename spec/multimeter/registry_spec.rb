@@ -107,36 +107,6 @@ module Multimeter
         }
       end
 
-      it 'merges instance registries by creating a meta-metric' do
-        instance_registry1 = registry.sub_registry('the_scope', 1)
-        instance_registry2 = registry.sub_registry('the_scope', 2)
-        instance_registry3 = registry.sub_registry('the_scope', 3)
-        instance_registry1.counter(:stuff).inc(2)
-        instance_registry1.gauge(:status) { 0 }
-        instance_registry2.counter(:stuff).inc(1)
-        instance_registry3.counter(:stuff).inc(3)
-        registry.to_h.should == {
-          'the_scope' => {
-            :stuff => {
-              :type => :aggregate,
-              :total => {:type => :counter, :count => {
-                  :min => 1,
-                  :max => 3,
-                  :sum => 1 + 2 + 3,
-                  :avg => 6/3.0
-                }
-              },
-              :parts => {
-                '1' => {:type => :counter, :count => 2},
-                '2' => {:type => :counter, :count => 1},
-                '3' => {:type => :counter, :count => 3}
-              }
-            },
-            :status => {:type => :gauge, :value => 0}
-          }
-        }
-      end
-
       it 'prunes empty scopes' do
         sub_registry1 = registry.sub_registry('scope1')
         sub_registry1.counter(:count1).inc
