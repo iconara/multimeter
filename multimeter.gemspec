@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.email       = ['theo@iconara.net']
   s.homepage    = 'http://github.com/iconara/multimeter'
   s.summary     = 'JRuby application metric instrumentation using Yammer\'s Metrics'
-  s.description = 'Multimeter provides a JRuby DSL for instrumenting your application. It uses Yammer\'s Metrics library under the hood.'
+  s.description = 'Multimeter provides a thin wrapper around Yammer\'s Metrics library under the hood.'
 
   s.rubyforge_project = 'multimeter'
 

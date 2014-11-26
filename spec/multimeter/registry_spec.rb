@@ -2,48 +2,6 @@ require_relative '../spec_helper'
 
 
 module Multimeter
-  module RegistrySpecs
-    class ClassWithInstanceMetrics
-      include InstanceMetrics
-
-      instance_id { @id }
-      counter :count
-
-      def initialize(id)
-        @id = id
-        super()
-      end
-
-      def c!
-        counter.inc
-      end
-    end
-
-    class ClassWithLinkedInstanceMetrics
-      include LinkedInstanceMetrics
-
-      instance_id { "instance-#{@id}" }
-      scope :example
-      counter :count
-      gauge :current do
-        value
-      end
-
-      def initialize(id)
-        @id = id
-        super()
-      end
-
-      def c!
-        count.inc
-      end
-
-      def value
-        count.count
-      end
-    end
-  end
-
   describe Registry do
     let :registry do
       Multimeter.registry('a_group', 'some_scope')
@@ -75,20 +33,6 @@ module Multimeter
       it 'raises an error if a metric is redeclared as another type' do
         registry.counter(:some_name)
         expect { registry.meter(:some_name) }.to raise_error(ArgumentError)
-      end
-    end
-
-    context 'with custom registry instance IDs' do
-      it 'uses the value returned by the instance_id pragma' do
-        i1 = RegistrySpecs::ClassWithInstanceMetrics.new(3)
-        i1.multimeter_registry.instance_id.should == 3
-      end
-
-      it 'shares registries when two linked instances have the same ID' do
-        first = RegistrySpecs::ClassWithLinkedInstanceMetrics.new(3)
-        second = RegistrySpecs::ClassWithLinkedInstanceMetrics.new(3)
-        first.c!
-        second.current.value.should == 1
       end
     end
 
