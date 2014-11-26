@@ -93,6 +93,7 @@ module Multimeter
     end
 
     class Histogram
+      java_alias :update, :update, [Java::long]
       def to_h
         {
           :type => :histogram,
