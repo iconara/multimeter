@@ -71,10 +71,6 @@ module Multimeter
     end
 
     class Meter
-      def type
-        :meter
-      end
-
       def to_h
         {
           :type => :meter,
@@ -88,10 +84,6 @@ module Multimeter
     end
 
     class Counter
-      def type
-        :counter
-      end
-
       def to_h
         {
           :type => :counter,
@@ -101,10 +93,6 @@ module Multimeter
     end
 
     class Histogram
-      def type
-        :histogram
-      end
-
       def to_h
         {
           :type => :histogram,
@@ -114,10 +102,6 @@ module Multimeter
     end
 
     module Gauge
-      def type
-        :gauge
-      end
-
       def to_h
         {
           :type => :gauge,
@@ -127,10 +111,6 @@ module Multimeter
     end
 
     class Timer
-      def type
-        :timer
-      end
-
       def to_h
         {
           :type => :timer,
