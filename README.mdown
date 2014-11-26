@@ -1,83 +1,12 @@
 # Multimeter
 
-JRuby application metric instrumentation using Yammer's Metrics.
+JRuby application metric instrumentation using https://dropwizard.github.io/metrics.
 
 ## Usage
 
-There are a number of ways to use Multimeter
+You can create a metrics registry yourself, and create any metrics you want like this:
 
-### Instrumenting a class
-
-    class MyWorker
-      include Multimeter::Metrics
-
-      counter :stuff
-      timer :work
-
-      def do_the_work
-        stuff.inc if something
-        work.measure do
-          do_heavy_lifting
-        end
-      end
-    end
-
-    worker = MyWorker.new
-    100.times do
-      worker.do_the_work
-    end
-    
-    puts worker.stuff.count
-    puts worker.work.mean
-
-In this setup the instrumentation is shared among all instances of the `MyWorker` class, so you'll get the total count and the global mean duration among all instances, if you create more than one.
-
-If you want to instrument each instance separately you can include `Multimeter::InstanceMetrics` instead. _Please not that when you use `Multimeter::InstanceMetrics` (or `Multimeter::LinkedInstanceMetrics`) it's very important that you make sure to call `super` in `#initialize`, otherwise the metrics aren't set up properly` -- and if you use `#instance_id` you absolutely must call `super` after you've initialized any instance variables that `instance_id` depends on_.
-
-The metrics are grouped together using a group and type name derived from the "package" and class name of the instrumented class. This is only relevant when you enable reporting. If you use instance instrumentation the object ID is appended to the class name.
-
-There are two more variants of instance of the mixin: `Multimeter::GlobalMetrics`, which uses a single, global, metrics registry, and `Multimeter::LinkedMetrics` & `Multimeter::LinkedInstanceMetrics`. The global metrics registers all metrics with the global registry (you can get a reference to it using `Multimeter.global_registry`) and the "linked" variants create new registries as sub registries of the global registry (you can find them using `Multimeter.global_registry.sub_registries`). If you're using linked instance metrics it's very, very important that you only mix it into classes that you don't create lots of instances of. Only mix it into classes of long running objects. The reason is that the metrics registries created for the instances will never be garbage collected, they stay around forever.
-
-### Reusable "namespace objects"
-
-If you don't want to instrument classes, but rather have instrumentation that you can pass around as an object you can create "namespace objects", classes that only have instrumentation, whose instances serve as containers for counters, timers, etc.
-
-    class MyMetrics
-      include Multimeter::Metrics
-
-      counter :stuff
-      timer :work
-    end
-
-    metrics = MyMetrics.new
-    metrics.stuff.inc
-    metrics.stuff.inc
-    metrics.stuff.dec
-    metrics.work.measure do
-      # do some heavy work
-    end
-
-Just as with instrumented classes you can include `Multimeter::InstanceMetrics` if you want each instance to keep it's own measurements.
-
-### One-off "namespace objects"
-
-You can also create one-off groups of metrics. You need to provide a group and type name (these default to the "package" and class name in the other examples, but there is no equivalent in this case)
-
-    metrics = Multimeter.metrics('my_application', 'some_metrics') do
-      counter :stuff
-      timer :work
-    end
-
-    metrics.stuff.inc
-    metrics.work.measure do
-      # do some heavy work
-    end
-
-### Create just the metrics you want
-
-If none of the options above feels right to you, you can create a metrics registry yourself, and create any metrics you want like this:
-
-    registry = Multimeter.registry('my_application', 'some_metrics')
+    registry = Multimeter.create_registry
     stuff = registry.counter('stuff')
     timer = registry.timer('work')
 
@@ -86,7 +15,7 @@ If none of the options above feels right to you, you can create a metrics regist
       # do some heavy work
     end
 
-This is also the only way to create gauges. These are metrics that proxy things that are counted by other means:
+Ruby blocks can also be used to define gauges---metrics that proxy things that are counted by other means:
 
     gague = registy.gauge('requests_per_second') do
       some_object.requests_per_second
@@ -97,6 +26,3 @@ This is also the only way to create gauges. These are metrics that proxy things 
       sleep 1
     end
 
-## Thread safety
-
-The metrics and the registries are all thread safe. The only thing that is not thread safe is the configuration DSL, but it's meant to be used in class context and unless you use `autoload` that should always run single threaded.
