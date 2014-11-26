@@ -1,13 +1,14 @@
-require_relative '../spec_helper'
+# encoding: utf-8
 
+require 'spec_helper'
 
-module Yammer::Metrics
-  describe Yammer::Metrics do
+module Multimeter
+  describe Metrics do
     let :registry do
-      Multimeter.registry('a_group', 'some_type')
+      Metrics::MetricRegistry.new
     end
 
-    describe Counter do
+    describe Metrics::Counter do
       describe '#to_h' do
         it 'returns a hash representation of the counter' do
           c = registry.counter(:a_counter)
@@ -17,14 +18,13 @@ module Yammer::Metrics
       end
     end
 
-    describe Meter do
+    describe Metrics::Meter do
       describe '#to_h' do
         it 'returns a hash representation of the meter' do
-          m = registry.meter(:some_meter, :event_type => 'stuff')
+          m = registry.meter(:some_meter)
           m.mark
           h = m.to_h
           h[:type].should == :meter
-          h[:event_type].should == 'stuff'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
           h[:one_minute_rate].should be_a(Numeric)
@@ -34,7 +34,7 @@ module Yammer::Metrics
       end
     end
 
-    describe Histogram do
+    describe Metrics::Histogram do
       it 'returns a hash representation of the histogram' do
         hs = registry.histogram(:some_hist)
         hs.update(4)
@@ -45,7 +45,6 @@ module Yammer::Metrics
         h[:min].should be_a(Numeric)
         h[:mean].should be_a(Numeric)
         h[:std_dev].should be_a(Numeric)
-        h[:sum].should be_a(Numeric)
         h[:median].should be_a(Numeric)
         h[:percentiles]['75'].should be_a(Numeric)
         h[:percentiles]['95'].should be_a(Numeric)
@@ -55,7 +54,7 @@ module Yammer::Metrics
       end
     end
 
-    describe Timer do
+    describe Metrics::Timer do
       describe '#measure' do
         it 'returns the value of the block' do
           t = registry.timer(:timer)
@@ -69,7 +68,6 @@ module Yammer::Metrics
           t.measure { }
           h = t.to_h
           h[:type].should == :timer
-          h[:event_type].should == 'calls'
           h[:count].should == 1
           h[:mean_rate].should be_a(Numeric)
           h[:one_minute_rate].should be_a(Numeric)
@@ -79,7 +77,6 @@ module Yammer::Metrics
           h[:min].should be_a(Numeric)
           h[:mean].should be_a(Numeric)
           h[:std_dev].should be_a(Numeric)
-          h[:sum].should be_a(Numeric)
           h[:median].should be_a(Numeric)
           h[:percentiles]['75'].should be_a(Numeric)
           h[:percentiles]['95'].should be_a(Numeric)
@@ -90,7 +87,7 @@ module Yammer::Metrics
       end
     end
 
-    describe Gauge do
+    describe Metrics::Gauge do
       describe '#to_h' do
         it 'returns a hash representation of the gauge' do
           g = registry.gauge(:some_gauge) { 42 }
