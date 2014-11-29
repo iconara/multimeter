@@ -98,7 +98,7 @@ module Multimeter
         {
           :type => :histogram,
           :count => count,
-        }.merge(snapshot.to_h(NANO_TO_MILLI))
+        }.merge(snapshot.to_h(NANO_TO_MILLI_SCALE))
       end
     end
 
@@ -120,7 +120,7 @@ module Multimeter
           :one_minute_rate => one_minute_rate,
           :five_minute_rate => five_minute_rate,
           :fifteen_minute_rate => fifteen_minute_rate,
-        }.merge(snapshot.to_h(NANO_TO_MILLI))
+        }.merge(snapshot.to_h(NANO_TO_MILLI_SCALE))
       end
 
       def measure
@@ -154,18 +154,18 @@ module Multimeter
 
     private
 
-    NANO_TO_MILLI = 1.0/1_000_000
+    NANO_TO_MILLI_SCALE = 1.0/1_000_000
   end
 
   def self.create_registry
     Metrics::MetricRegistry.new
   end
 
-  def self.jmx!(registry, options = {})
-    Metrics::JmxReporter.forRegistry(registry).inDomain(options[:domain] || 'metrics').build.tap(&:start)
+  def self.jmx(registry, options = {})
+    Metrics::JmxReporter.forRegistry(registry).inDomain(options[:domain] || 'multimeter').build.tap(&:start)
   end
 
-  def self.http!(registry, rack_handler, options={})
+  def self.http(registry, rack_handler, options={})
     server_thread = Java::JavaLang::Thread.new do
       rack_handler.run(Http.create_app(registry), options)
     end
