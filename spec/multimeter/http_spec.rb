@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 module Multimeter
-  describe 'Multimter.http!' do
+  describe 'Multimeter.http' do
     let :registry do
       Multimeter.create_registry
     end
@@ -17,7 +17,7 @@ module Multimeter
           app, options = a, o
           barrier.release
         end
-        Multimeter.http!(registry, rack_handler)
+        Multimeter.http(registry, rack_handler)
         barrier.try_acquire(5, java.util.concurrent.TimeUnit::SECONDS).should_not be_false
         [app, options]
       end

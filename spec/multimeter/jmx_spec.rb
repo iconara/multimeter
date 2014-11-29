@@ -3,13 +3,13 @@
 require 'spec_helper'
 
 module Multimeter
-  describe 'Multimeter.jmx!' do
+  describe 'Multimeter.jmx' do
     let :registry do
       Multimeter.create_registry
     end
 
     let! :jmx do
-      Multimeter.jmx!(registry, domain: domain)
+      Multimeter.jmx(registry, domain: domain)
     end
 
     let :domain do
