@@ -139,9 +139,8 @@ module Multimeter
           registry.histogram(:some_hist)
           registry.timer(:timer)
           registry.to_h.keys.map(&:to_s).sort.should == %w[a_counter some_gauge some_hist some_meter timer]
-          registry.to_h.each_value do |value|
-            value.should be_a(Hash)
-            value.should_not be_empty
+          registry.to_h.each do |key, value|
+            value.should == registry.metrics.get(key).to_h
           end
         end
       end
