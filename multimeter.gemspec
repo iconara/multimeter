@@ -11,8 +11,8 @@ Gem::Specification.new do |s|
   s.authors     = ['Theo Hultberg']
   s.email       = ['theo@iconara.net']
   s.homepage    = 'http://github.com/iconara/multimeter'
-  s.summary     = 'JRuby application metric instrumentation using Yammer\'s Metrics'
-  s.description = 'Multimeter provides a thin wrapper around Yammer\'s Metrics library under the hood.'
+  s.summary     = 'JRuby application metric instrumentation using Coda Hale\'s Metrics'
+  s.description = 'Multimeter provides a thin wrapper around Coda Hale\'s Metrics library under the hood.'
 
   s.rubyforge_project = 'multimeter'
 
