@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    multimeter (1.1.7-java)
+    multimeter (1.1.8-java)
       metrics-core-jars (~> 2.1.2, < 3.0.0)
 
 GEM
