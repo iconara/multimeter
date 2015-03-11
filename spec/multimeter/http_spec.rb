@@ -18,7 +18,7 @@ module Multimeter
           barrier.release
         end
         Multimeter.http(registry, rack_handler)
-        barrier.try_acquire(5, java.util.concurrent.TimeUnit::SECONDS).should_not be_false
+        barrier.try_acquire(5, java.util.concurrent.TimeUnit::SECONDS).should_not be_falsy
         [app, options]
       end
 
