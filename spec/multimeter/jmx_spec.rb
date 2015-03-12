@@ -21,21 +21,21 @@ module Multimeter
     end
 
     def get_attribute(metric_name, attribute)
-      Java::JavaLangManagement::ManagementFactory.getPlatformMBeanServer.getAttribute(Java::JavaxManagement::ObjectName.new(domain, 'name', metric_name), attribute)
+      object_name = Java::JavaxManagement::ObjectName.new(domain, 'name', metric_name)
+      Java::JavaLangManagement::ManagementFactory.getPlatformMBeanServer.getAttribute(object_name, attribute)
     end
 
-    it 'publishes metrics using jmx' do
-      registry.counter(:a_counter)
-      registry.gauge(:some_gauge) { 42 }
-      registry.meter(:some_meter)
-      registry.histogram(:some_hist)
-      registry.timer(:timer)
-
-      get_attribute('a_counter', 'Count').should == 0
-      get_attribute('some_gauge', 'Value').should == 42
-      get_attribute('some_meter', 'Count').should == 0
-      get_attribute('some_hist', 'Count').should == 0
-      get_attribute('timer', 'Count').should == 0
+    it 'publishes metrics using JMX' do
+      registry.counter('a_counter')
+      registry.meter('a_meter')
+      registry.timer('a_timer')
+      registry.histogram('an_histogram')
+      registry.gauge('a_gauge') { 3 }
+      expect(get_attribute('a_counter', 'Count')).to eq(0)
+      expect(get_attribute('a_meter', 'Count')).to eq(0)
+      expect(get_attribute('a_timer', 'Count')).to eq(0)
+      expect(get_attribute('an_histogram', 'Count')).to eq(0)
+      expect(get_attribute('a_gauge', 'Value')).to eq(3)
     end
   end
 end

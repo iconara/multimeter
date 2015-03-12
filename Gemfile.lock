@@ -10,6 +10,9 @@ GEM
     diff-lcs (1.2.5)
     metrics-core-jars (3.0.2-java)
     rack (1.4.1)
+    rake (10.4.2)
+    rake-compiler (0.9.5)
+      rake
     rspec (3.2.0)
       rspec-core (~> 3.2.0)
       rspec-expectations (~> 3.2.0)
@@ -31,5 +34,6 @@ PLATFORMS
 DEPENDENCIES
   multimeter!
   rack
+  rake-compiler
   rspec
   slf4j-jars
