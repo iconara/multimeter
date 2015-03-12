@@ -7,5 +7,7 @@ group :examples do
 end
 
 group :test do
+  gem 'slf4j-jars'
   gem 'rspec'
+  gem 'rake-compiler'
 end

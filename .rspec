@@ -1,4 +1,5 @@
 -I lib
 --color
+--tty
 --format doc
 spec

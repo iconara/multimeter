@@ -1,0 +1,13 @@
+language: ruby
+bundler_args: --without development
+sudo: false
+cache: bundler
+matrix:
+  include:
+    - rvm: jruby
+      env: JRUBY_OPTS=--1.9
+    - rvm: jruby
+      env: JRUBY_OPTS=--2.0
+    - rvm: jruby-head
+  allow_failures:
+    - rvm: jruby-head

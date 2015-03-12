@@ -1,12 +1,11 @@
-require_relative '../spec_helper'
+# encoding: utf-8
 
+require 'spec_helper'
 
 module Multimeter
-  describe Http do
+  describe 'Multimeter.http' do
     let :registry do
-      r = double(:registry)
-      r.extend(Http)
-      r
+      Multimeter.create_registry
     end
 
     context 'when handling requests' do
@@ -14,61 +13,61 @@ module Multimeter
         barrier = java.util.concurrent.Semaphore.new(0)
         app, options = nil, nil
         rack_handler = double(:rack_handler)
-        rack_handler.stub(:run) do |a, o|
+        allow(rack_handler).to receive(:run) do |a, o|
           app, options = a, o
           barrier.release
         end
-        registry.http!(rack_handler)
-        barrier.try_acquire(5, java.util.concurrent.TimeUnit::SECONDS).should_not be_false
+        Multimeter.http(registry, rack_handler)
+        expect(barrier.try_acquire(5, java.util.concurrent.TimeUnit::SECONDS)).not_to be_falsy
         [app, options]
       end
 
       before do
-        registry.stub(:to_h).and_return({'hello' => 'world'})
+        registry.counter('test').inc
       end
 
       context 'valid requests' do
         it 'responds with a JSON document created from calling #to_h on the registry' do
           app, options = extract_app
           status, headers, body = app.call({'QUERY_STRING' => ''})
-          body.join("\n").should == '{"hello":"world"}'
+          expect(body.join("\n")).to eq('{"test":{"type":"counter","count":1}}')
         end
 
         it 'responds with application/json' do
           app, options = extract_app
           status, headers, body = app.call({'QUERY_STRING' => ''})
-          headers['Content-Type'].should == 'application/json'
+          expect(headers).to include('Content-Type' => 'application/json')
         end
 
         it 'responds with Connection: close' do
           app, options = extract_app
           status, headers, body = app.call({'QUERY_STRING' => ''})
-          headers['Connection'].should == 'close'
+          expect(headers).to include('Connection' => 'close')
         end
 
         it 'responds with CORS headers' do
           app, _ = extract_app
           _, headers, _ = app.call({'QUERY_STRING' => ''})
-          headers['Access-Control-Allow-Origin'].should == '*'
+          expect(headers).to include('Access-Control-Allow-Origin' => '*')
         end
 
         context 'JSONP' do
           it 'responds with a JSON document wrapped in a function call when the callback parameter is given' do
             app, options = extract_app
             status, headers, body = app.call({'QUERY_STRING' => 'callback=the_cbk'})
-            body.join("\n").should == 'the_cbk({"hello":"world"});'
+            expect(body.join("\n")).to eq('the_cbk({"test":{"type":"counter","count":1}});')
           end
 
           it 'responds with application/javascript for JSONP request' do
             app, options = extract_app
             status, headers, body = app.call({'QUERY_STRING' => 'callback=the_cbk'})
-            headers['Content-Type'].should == 'application/javascript'
+            expect(headers).to include('Content-Type' => 'application/javascript')
           end
 
           it 'responds with Connection: close' do
             app, options = extract_app
             status, headers, body = app.call({'QUERY_STRING' => 'callback=the_cbk'})
-            headers['Connection'].should == 'close'
+            expect(headers).to include('Connection' => 'close')
           end
         end
       end
@@ -78,28 +77,28 @@ module Multimeter
           it 'responds with error 400 if the callback contains invalid chars' do
             app, options = extract_app
             status, headers, body = app.call({'QUERY_STRING' => 'callback=apa*&^%$'})
-            status.should == 400
+            expect(status).to eq(400)
           end
 
           it 'responds with Connection: close' do
             app, options = extract_app
             status, headers, body = app.call({'QUERY_STRING' => 'callback=apa*&^%$'})
-            headers['Connection'].should == 'close'
+            expect(headers).to include('Connection' => 'close')
           end
         end
         context '500' do
           it 'responds with error 500 if an exception is thrown in the request handling' do
-            registry.stub(:to_h).and_raise('blurgh')
+            allow(registry).to receive(:to_h).and_raise('blurgh')
             app, options = extract_app
             status, headers, body = app.call({'QUERY_STRING' => 'callback=apa*&^%$'})
-            status.should == 500
+            expect(status).to eq(500)
           end
 
           it 'responds with Connection: close' do
-            registry.stub(:to_h).and_raise('blurgh')
+            allow(registry).to receive(:to_h).and_raise('blurgh')
             app, options = extract_app
             status, headers, body = app.call({'QUERY_STRING' => 'callback=apa*&^%$'})
-            headers['Connection'].should == 'close'
+            expect(headers).to include('Connection' => 'close')
           end
         end
       end

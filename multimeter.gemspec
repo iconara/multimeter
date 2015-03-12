@@ -11,13 +11,14 @@ Gem::Specification.new do |s|
   s.authors     = ['Theo Hultberg']
   s.email       = ['theo@iconara.net']
   s.homepage    = 'http://github.com/iconara/multimeter'
-  s.summary     = 'JRuby application metric instrumentation using Yammer\'s Metrics'
-  s.description = 'Multimeter provides a JRuby DSL for instrumenting your application. It uses Yammer\'s Metrics library under the hood.'
+  s.summary     = 'JRuby application metric instrumentation using Coda Hale\'s Metrics'
+  s.description = 'Multimeter provides a thin wrapper around Coda Hale\'s Metrics library under the hood.'
+  s.license     = 'Apache-2.0'
 
   s.rubyforge_project = 'multimeter'
 
-  s.add_dependency 'metrics-core-jars', '~> 2.1.2', '< 3.0.0'
+  s.add_dependency 'metrics-core-jars', '~> 3.1', '< 4.0.0'
 
-  s.files         = FileList['lib/**/*.rb'].to_a
+  s.files         = Dir['lib/**/*.rb', 'lib/**/*.jar']
   s.require_paths = %w[lib]
 end
