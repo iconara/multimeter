@@ -18,6 +18,6 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'metrics-core-jars', '~> 3.1.1'
 
-  s.files         = Dir['lib/**/*.rb']
+  s.files         = Dir['lib/**/*.rb', 'lib/**/*.jar']
   s.require_paths = %w[lib]
 end
