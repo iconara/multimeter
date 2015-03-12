@@ -11,11 +11,11 @@ You can create a metrics registry yourself, and create any metrics you want like
     timer = registry.timer('work')
 
     stuff.inc
-    timer.measure do
+    timer.time do
       # do some heavy work
     end
 
-Ruby blocks can also be used to define gauges---metrics that proxy things that are counted by other means:
+Ruby blocks can also be used to define gauges – metrics that proxy things that are counted by other means:
 
     gague = registy.gauge('requests_per_second') do
       some_object.requests_per_second
