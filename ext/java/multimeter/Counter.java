@@ -35,23 +35,27 @@ public class Counter extends RubyObject {
     return ctx.runtime.newFixnum(counter.getCount());
   }
 
-  @JRubyMethod(optional=1)
-  public IRubyObject inc(ThreadContext ctx, IRubyObject[] args) {
-    if (args.length == 0) {
-      counter.inc();
-    } else {
-      counter.inc(args[0].convertToInteger().getLongValue());
-    }
+  @JRubyMethod
+  public IRubyObject inc(ThreadContext ctx) {
+    counter.inc();
     return ctx.runtime.getNil();
   }
 
-  @JRubyMethod(optional=1)
-  public IRubyObject dec(ThreadContext ctx, IRubyObject[] args) {
-    if (args.length == 0) {
-      counter.dec();
-    } else {
-      counter.dec(args[0].convertToInteger().getLongValue());
-    }
+  @JRubyMethod
+  public IRubyObject inc(ThreadContext ctx, IRubyObject amount) {
+    counter.inc(amount.convertToInteger().getLongValue());
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod
+  public IRubyObject dec(ThreadContext ctx) {
+    counter.dec();
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod
+  public IRubyObject dec(ThreadContext ctx, IRubyObject amount) {
+    counter.dec(amount.convertToInteger().getLongValue());
     return ctx.runtime.getNil();
   }
 }

@@ -35,13 +35,15 @@ public class Meter extends RubyObject {
     return ctx.runtime.newFixnum(meter.getCount());
   }
 
-  @JRubyMethod(optional=1)
-  public IRubyObject mark(ThreadContext ctx, IRubyObject[] args) {
-    if (args.length == 0) {
-      meter.mark();
-    } else {
-      meter.mark(args[0].convertToInteger().getLongValue());
-    }
+  @JRubyMethod
+  public IRubyObject mark(ThreadContext ctx) {
+    meter.mark();
+    return ctx.runtime.getNil();
+  }
+
+  @JRubyMethod
+  public IRubyObject mark(ThreadContext ctx, IRubyObject amount) {
+    meter.mark(amount.convertToInteger().getLongValue());
     return ctx.runtime.getNil();
   }
 
