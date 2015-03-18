@@ -53,33 +53,45 @@ public class MetricRegistry extends RubyObject {
 
   @JRubyMethod
   public IRubyObject counter(ThreadContext ctx, IRubyObject arg) {
-    String name = arg.asJavaString();
-    Counter wrapper = new Counter(ctx.runtime, registry.counter(name));
-    metrics.fastASet(arg, wrapper);
+    IRubyObject wrapper = metrics.fastARef(arg);
+    if (wrapper == null) {
+      String name = arg.asJavaString();
+      wrapper = new Counter(ctx.runtime, registry.counter(name));
+      metrics.fastASet(arg, wrapper);
+    }
     return wrapper;
   }
 
   @JRubyMethod
   public IRubyObject meter(ThreadContext ctx, IRubyObject arg) {
-    String name = arg.asJavaString();
-    Meter wrapper = new Meter(ctx.runtime, registry.meter(name));
-    metrics.fastASet(arg, wrapper);
+    IRubyObject wrapper = metrics.fastARef(arg);
+    if (wrapper == null) {
+      String name = arg.asJavaString();
+      wrapper = new Meter(ctx.runtime, registry.meter(name));
+      metrics.fastASet(arg, wrapper);
+    }
     return wrapper;
   }
 
   @JRubyMethod
   public IRubyObject timer(ThreadContext ctx, IRubyObject arg) {
-    String name = arg.asJavaString();
-    Timer wrapper = new Timer(ctx.runtime, registry.timer(name));
-    metrics.fastASet(arg, wrapper);
+    IRubyObject wrapper = metrics.fastARef(arg);
+    if (wrapper == null) {
+      String name = arg.asJavaString();
+      wrapper = new Timer(ctx.runtime, registry.timer(name));
+      metrics.fastASet(arg, wrapper);
+    }
     return wrapper;
   }
 
   @JRubyMethod
   public IRubyObject histogram(ThreadContext ctx, IRubyObject arg) {
-    String name = arg.asJavaString();
-    Histogram wrapper = new Histogram(ctx.runtime, registry.histogram(name));
-    metrics.fastASet(arg, wrapper);
+    IRubyObject wrapper = metrics.fastARef(arg);
+    if (wrapper == null) {
+      String name = arg.asJavaString();
+      wrapper = new Histogram(ctx.runtime, registry.histogram(name));
+      metrics.fastASet(arg, wrapper);
+    }
     return wrapper;
   }
 

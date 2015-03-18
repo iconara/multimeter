@@ -13,12 +13,26 @@ module Multimeter
         counter = metric_registry.counter('foo')
         expect(counter).to be_a(Counter)
       end
+
+      it 'returns an existing counter' do
+        counter = metric_registry.counter('foo')
+        counter.inc
+        counter = metric_registry.counter('foo')
+        expect(counter.count).to eq(1)
+      end
     end
 
     describe '#meter' do
       it 'creates a meter metric' do
         meter = metric_registry.meter('foo')
         expect(meter).to be_a(Meter)
+      end
+
+      it 'returns an existing meter' do
+        meter = metric_registry.meter('foo')
+        meter.mark
+        meter = metric_registry.meter('foo')
+        expect(meter.count).to eq(1)
       end
     end
 
@@ -27,12 +41,26 @@ module Multimeter
         timer = metric_registry.timer('foo')
         expect(timer).to be_a(Timer)
       end
+
+      it 'returns an existing timer' do
+        timer = metric_registry.timer('foo')
+        timer.time { }
+        timer = metric_registry.timer('foo')
+        expect(timer.count).to eq(1)
+      end
     end
 
     describe '#histogram' do
       it 'creates a histogram metric' do
         histogram = metric_registry.histogram('foo')
         expect(histogram).to be_a(Histogram)
+      end
+
+      it 'returns an existing histogram' do
+        histogram = metric_registry.histogram('foo')
+        histogram.update(3)
+        histogram = metric_registry.histogram('foo')
+        expect(histogram.count).to eq(1)
       end
     end
 
