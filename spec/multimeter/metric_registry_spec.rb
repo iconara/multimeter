@@ -101,6 +101,15 @@ module Multimeter
         metrics = metric_registry.metrics
         expect(metrics.keys).to contain_exactly(*%w[a_counter a_meter a_timer an_histogram a_gauge])
       end
+
+      it 'does not return an object that can be used to modify its internal state' do
+        counter = metric_registry.counter('a_counter')
+        counter.inc
+        another_registry = described_class.new
+        another_registry.metrics['a_counter'] = counter
+        counter = another_registry.counter('a_counter')
+        expect(counter.count).to eq(0)
+      end
     end
 
     describe '#to_h' do

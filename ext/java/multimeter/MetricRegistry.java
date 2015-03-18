@@ -48,7 +48,7 @@ public class MetricRegistry extends RubyObject {
 
   @JRubyMethod
   public IRubyObject metrics(ThreadContext ctx) {
-    return metrics;
+    return metrics.dup(ctx);
   }
 
   @JRubyMethod
