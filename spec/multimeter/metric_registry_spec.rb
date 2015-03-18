@@ -126,5 +126,22 @@ module Multimeter
         end
       end
     end
+
+    describe '#to_java' do
+      it 'returns the underlying metric registry' do
+        mr = metric_registry.to_java
+        expect(mr).to be_a(com.codahale.metrics.MetricRegistry)
+      end
+
+      it 'has registered all metrics with the underlying registry' do
+        counter = metric_registry.counter('foo')
+        counter.inc
+        metric_registry.gauge('bar') { 3 }
+        mr = metric_registry.to_java
+        metrics = mr.get_metrics
+        expect(metrics['foo'].count).to eq(1)
+        expect(metrics['bar'].value).to eq(3)
+      end
+    end
   end
 end
