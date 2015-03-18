@@ -69,6 +69,26 @@ module Multimeter
         gauge = metric_registry.gauge('foo') { 1 }
         expect(gauge).to be_a(Gauge)
       end
+
+      it 'replaces the gauge when registered again' do
+        metric_registry.gauge('foo') { 1 }
+        metric_registry.gauge('foo') { 2 }
+        gauge = metric_registry.gauge('foo')
+        expect(gauge.value).to eq(2)
+      end
+
+      context 'when given no block' do
+        it 'returns a previously registered gauge' do
+          metric_registry.gauge('foo') { 1 }
+          gauge = metric_registry.gauge('foo')
+          expect(gauge).to be_a(Gauge)
+        end
+
+        it 'returns nil when no gauge has been registered' do
+          gauge = metric_registry.gauge('foo')
+          expect(gauge).to be_nil
+        end
+      end
     end
 
     describe '#metrics' do
