@@ -7,6 +7,9 @@ import org.jruby.RubyObject;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -112,6 +115,58 @@ public class MetricRegistry extends RubyObject {
       return wrapper;
     } else {
       return metrics.fastARef(arg);
+    }
+  }
+
+  @JRubyMethod
+  public IRubyObject gauge(ThreadContext ctx, IRubyObject arg, IRubyObject returnType, Block block) {
+    String name = arg.asJavaString();
+    if (block.isGiven()) {
+      final RubyProc callback = ctx.runtime.newProc(Block.Type.PROC, block);
+      final Ruby runtime = ctx.runtime;
+      final Class type = resolveType(returnType);
+      registry.remove(name);
+      Gauge wrapper = new Gauge(ctx.runtime, registry.register(name, new com.codahale.metrics.Gauge<Object>() {
+        @Override
+        public Object getValue() {
+          IRubyObject rawValue = callback.call(runtime.getCurrentContext(), IRubyObject.NULL_ARRAY);
+          return convertType(type, rawValue);
+        }
+      }));
+      metrics.fastASet(arg, wrapper);
+      return wrapper;
+    } else {
+      throw ctx.runtime.newArgumentError("A block must be given when the gauge type is specified");
+    }
+  }
+
+  private Class resolveType(IRubyObject type) {
+    if (type instanceof RubyClass) {
+      return (Class) ((RubyClass) type).toJava(Class.class);
+    } else if (type instanceof RubyString || type instanceof RubySymbol) {
+      String stringName = type.asJavaString();
+      if (stringName.equalsIgnoreCase("long")) {
+        return Long.class;
+      } else if (stringName.equalsIgnoreCase("int") || stringName.equalsIgnoreCase("integer")) {
+        return Integer.class;
+      } else if (stringName.equalsIgnoreCase("double")) {
+        return Double.class;
+      } else if (stringName.equalsIgnoreCase("float")) {
+        return Float.class;
+      } else if (stringName.equalsIgnoreCase("string")) {
+        return String.class;
+      }
+    }
+    throw type.getRuntime().newArgumentError(String.format("Unsupported type \"%s\"", type.toString()));
+  }
+
+  private Object convertType(Class type, IRubyObject value) {
+    if (type == null) {
+      return value;
+    } else if (type == String.class) {
+      return value.toString();
+    } else {
+      return value.toJava(type);
     }
   }
 }

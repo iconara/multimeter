@@ -89,6 +89,53 @@ module Multimeter
           expect(gauge).to be_nil
         end
       end
+
+      context 'when the return type is specified' do
+        it 'converts the value to a Long' do
+          [:long, 'long', :loNG, 'LOng', Java::long, java.lang.Long].each do |type|
+            gauge = metric_registry.gauge('foo', type) { 3.14 }
+            expect(gauge.value).to eq(3)
+          end
+        end
+
+        it 'converts the value to an Integer' do
+          [:int, :integer, 'int', 'integer', :iNt, 'iNtEgEr', Java::int, java.lang.Integer].each do |type|
+            gauge = metric_registry.gauge('foo', type) { 3.14 }
+            expect(gauge.value).to eq(3)
+          end
+        end
+
+        it 'converts the value to a Double' do
+          [:double, 'double', :dOuBlE, 'dOuBlE', Java::double, java.lang.Double].each do |type|
+            gauge = metric_registry.gauge('foo', type) { Rational(1, 3) }
+            expect(gauge.value).to be_a(Float)
+          end
+        end
+
+        it 'converts the value to a Float' do
+          [:float, 'float', :fLoaT, 'fLoAt', Java::float, java.lang.Float].each do |type|
+            gauge = metric_registry.gauge('foo', type) { Rational(1, 3) }
+            expect(gauge.value).to be_a(Float)
+          end
+        end
+
+        it 'converts the value to a String' do
+          [:string, 'string', :sTrInG, 'sTrInG', java.lang.String].each do |type|
+            gauge = metric_registry.gauge('foo', type) { 42 }
+            expect(gauge.value).to eq('42')
+          end
+        end
+
+        it 'raises an error when no block is given' do
+          expect { metric_registry.gauge('foo', :long) }.to raise_error(ArgumentError, /block must be given/i)
+        end
+
+        it 'raises an error when the type is not supported' do
+          expect { metric_registry.gauge('foo', :bar) { 3 } }.to raise_error(ArgumentError, /unsupported type "bar"/i)
+          expect { metric_registry.gauge('foo', [:wut?]) { {:foo => :bar} } }.to raise_error(ArgumentError, /unsupported type/i)
+          expect { metric_registry.gauge('foo', java.util.Map) { {:foo => :bar} } }.to raise_error(ArgumentError, /unsupported type/i)
+        end
+      end
     end
 
     describe '#metrics' do

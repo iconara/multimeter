@@ -12,6 +12,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.javasupport.JavaUtil;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -23,15 +24,20 @@ public class Gauge extends RubyObject {
     cls.defineAnnotatedMethods(Gauge.class);
   }
 
-  private com.codahale.metrics.Gauge<IRubyObject> gauge;
+  private com.codahale.metrics.Gauge<? extends Object> gauge;
 
-  public Gauge(Ruby runtime, com.codahale.metrics.Gauge<IRubyObject> gauge) {
+  public Gauge(Ruby runtime, com.codahale.metrics.Gauge<? extends Object> gauge) {
     super(runtime, runtime.getModule("Multimeter").getClass("Gauge"));
     this.gauge = gauge;
   }
 
   @JRubyMethod
   public IRubyObject value(ThreadContext ctx) {
-    return gauge.getValue();
+    Object value = gauge.getValue();
+    if (value instanceof IRubyObject) {
+      return (IRubyObject) value;
+    } else {
+      return JavaUtil.convertJavaToUsableRubyObject(ctx.runtime, value);
+    }
   }
 }
