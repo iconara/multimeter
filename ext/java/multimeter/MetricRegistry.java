@@ -6,6 +6,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
+import org.jruby.RubyProc;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -85,10 +86,11 @@ public class MetricRegistry extends RubyObject {
   @JRubyMethod
   public IRubyObject gauge(final ThreadContext ctx, IRubyObject arg, final Block block) {
     String name = arg.asJavaString();
+    final RubyProc callback = ctx.runtime.newProc(Block.Type.PROC, block);
     Gauge wrapper = new Gauge(ctx.runtime, registry.register(name, new com.codahale.metrics.Gauge<IRubyObject>() {
       @Override
       public IRubyObject getValue() {
-        return block.yieldSpecific(ctx);
+        return callback.call19(ctx, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
       }
     }));
     metrics.fastASet(arg, wrapper);
