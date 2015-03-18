@@ -84,13 +84,14 @@ public class MetricRegistry extends RubyObject {
   }
 
   @JRubyMethod
-  public IRubyObject gauge(final ThreadContext ctx, IRubyObject arg, final Block block) {
+  public IRubyObject gauge(ThreadContext ctx, IRubyObject arg, Block block) {
     String name = arg.asJavaString();
     final RubyProc callback = ctx.runtime.newProc(Block.Type.PROC, block);
+    final Ruby runtime = ctx.runtime;
     Gauge wrapper = new Gauge(ctx.runtime, registry.register(name, new com.codahale.metrics.Gauge<IRubyObject>() {
       @Override
       public IRubyObject getValue() {
-        return callback.call19(ctx, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        return callback.call(runtime.getCurrentContext(), IRubyObject.NULL_ARRAY);
       }
     }));
     metrics.fastASet(arg, wrapper);
