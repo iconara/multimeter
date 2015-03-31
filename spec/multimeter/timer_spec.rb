@@ -24,6 +24,18 @@ module Multimeter
         timer.update(1, :seconds)
       end
 
+      context 'when no unit is given' do
+        it 'assumes that the unit is seconds' do
+          timer.update(1)
+          expect(timer.snapshot.median).to eq(1_000_000_000)
+        end
+
+        it 'keeps fractions of seconds' do
+          timer.update(1.3)
+          expect(timer.snapshot.median).to eq(1_300_000_000)
+        end
+      end
+
       it 'raises an error when the unit is not supported' do
         expect { timer.update(1, :fnords) }.to raise_error(ArgumentError, /"fnords" not supported/i)
       end

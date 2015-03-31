@@ -40,6 +40,14 @@ public class Timer extends RubyObject {
     return ctx.runtime.newFixnum(timer.getCount());
   }
 
+  @JRubyMethod(required=1)
+  public IRubyObject update(ThreadContext ctx, IRubyObject d) {
+    double duration = d.convertToFloat().getDoubleValue() * 1000000;
+    TimeUnit unit = TimeUnit.MICROSECONDS;
+    timer.update((long) duration, unit);
+    return ctx.runtime.getNil();
+  }
+
   @JRubyMethod(required=2)
   public IRubyObject update(ThreadContext ctx, IRubyObject d, IRubyObject u) {
     try {
