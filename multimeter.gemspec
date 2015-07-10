@@ -18,6 +18,8 @@ Gem::Specification.new do |s|
   s.rubyforge_project = 'multimeter'
 
   s.add_dependency 'metrics-core-jars', '~> 3.1', '< 4.0.0'
+  s.add_dependency 'metrics-servlets-jars', '~> 3.1'
+  s.add_dependency 'rjack-jetty', '~> 9.3'
 
   s.files         = Dir['lib/**/*.rb', 'lib/**/*.jar']
   s.require_paths = %w[lib]
