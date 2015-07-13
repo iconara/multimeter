@@ -12,6 +12,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.javasupport.JavaUtil;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -28,6 +29,11 @@ public class Histogram extends RubyObject {
   public Histogram(Ruby runtime, com.codahale.metrics.Histogram histogram) {
     super(runtime, runtime.getModule("Multimeter").getClass("Histogram"));
     this.histogram = histogram;
+  }
+
+  @JRubyMethod(name="to_java")
+  public IRubyObject toJava(ThreadContext ctx) {
+    return JavaUtil.convertJavaToUsableRubyObject(ctx.runtime, histogram);
   }
 
   @JRubyMethod

@@ -159,17 +159,21 @@ module Multimeter
       end
     end
 
-    describe '#to_h' do
-      it 'returns a hash representing all the metrics' do
+    describe '#to_json' do
+      it 'returns a json representing all the metrics' do
         metric_registry.counter('a_counter')
         metric_registry.meter('a_meter')
         metric_registry.timer('a_timer')
         metric_registry.histogram('an_histogram')
-        metric_registry.gauge('a_gauge') { 3 }
-        h = metric_registry.to_h
-        expect(h.keys).to contain_exactly(*%w[a_counter a_meter a_timer an_histogram a_gauge])
-        h.each do |key, value|
-          expect(value).to eq(metric_registry.metrics[key].to_h)
+        metric_registry.gauge('a_gauge', :int) { 3 }
+        h = JSON.parse(metric_registry.to_json)
+        metric_types = %w[counters meters timers histograms gauges]
+        expect(h.keys).to match_array(metric_types + ['version'])
+        metric_types.each do |type|
+          metrics = h[type]
+          metrics.each do |name, value|
+            expect(value).to eq(JSON.parse(metric_registry.metrics[name].to_json))
+          end
         end
       end
     end

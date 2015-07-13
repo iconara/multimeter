@@ -31,6 +31,11 @@ public class Gauge extends RubyObject {
     this.gauge = gauge;
   }
 
+  @JRubyMethod(name="to_java")
+  public IRubyObject toJava(ThreadContext ctx) {
+    return JavaUtil.convertJavaToUsableRubyObject(ctx.runtime, gauge);
+  }
+
   @JRubyMethod
   public IRubyObject value(ThreadContext ctx) {
     Object value = gauge.getValue();

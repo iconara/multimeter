@@ -34,13 +34,10 @@ module Multimeter
       end
     end
 
-    describe '#to_h' do
-      it 'returns a hash representation of the counter' do
+    describe '#to_json' do
+      it 'returns a json representation of the counter' do
         counter.inc
-        expect(counter.to_h).to eq(
-          :type => :counter,
-          :count => 1
-        )
+        expect(JSON.parse(counter.to_json)).to include('count' => 1)
       end
     end
   end
