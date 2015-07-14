@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require 'multimeter'
 require 'metrics-servlets-jars'
 require 'rjack-jetty'
 
@@ -21,6 +22,8 @@ module Multimeter
       server.handler = create_servlet_context(registry)
       Server.new(server)
     end
+
+    private
 
     def create_servlet_context(registry)
       context = Jetty::ServletContextHandler.new(Jetty::ServletContextHandler::SESSIONS)
@@ -50,4 +53,6 @@ module Multimeter
       end
     end
   end
+
+  extend Http
 end

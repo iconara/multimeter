@@ -3,7 +3,6 @@
 require 'metrics-core-jars'
 require 'multimeter_metrics'
 require 'json'
-require 'multimeter/http'
 require 'multimeter/rack'
 require 'multimeter/json'
 
@@ -12,7 +11,6 @@ module Metrics
 end
 
 module Multimeter
-  extend Http
   extend Rack
 
   class MetricRegistry
