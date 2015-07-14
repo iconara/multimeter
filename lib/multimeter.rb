@@ -62,8 +62,4 @@ module Multimeter
   def self.jmx(registry, options = {})
     Metrics::JmxReporter.forRegistry(registry.to_java).inDomain(options[:domain] || 'multimeter').build.tap(&:start)
   end
-
-  private
-
-  NANO_TO_MILLI_SCALE = 1.0/1_000_000
 end
