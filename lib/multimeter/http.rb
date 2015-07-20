@@ -28,7 +28,7 @@ module Multimeter
     def create_servlet_context(registry)
       context = Jetty::ServletContextHandler.new(Jetty::ServletContextHandler::SESSIONS)
       context.context_path = '/'
-      context.set_attribute(Metrics::Servlets::MetricsServlet::METRICS_REGISTRY, registry.to_java);
+      context.set_attribute(Metrics::Servlets::MetricsServlet::METRICS_REGISTRY, registry.to_java)
       context.add_servlet(Metrics::Servlets::MetricsServlet.java_class, '/*')
       context
     end
