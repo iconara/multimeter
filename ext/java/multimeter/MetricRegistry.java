@@ -49,6 +49,11 @@ public class MetricRegistry extends RubyObject {
     return JavaUtil.convertJavaToUsableRubyObject(ctx.runtime, registry);
   }
 
+  @JRubyMethod(name="to_json")
+  public RubyString toJson(ThreadContext ctx) {
+    return JSONSerializer.getInstance().serialize(ctx, registry);
+  }
+
   @JRubyMethod
   public IRubyObject metrics(ThreadContext ctx) {
     return metrics.dup(ctx);

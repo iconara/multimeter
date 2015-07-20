@@ -30,8 +30,8 @@ module Multimeter
           MetricRegistry.new.gauge('b_gauge') { 1 }
         end
 
-        it 'raises JsonMappingException' do
-          expect { gauge.to_json }.to raise_error(Jackson::Databind::JsonMappingException)
+        it 'raises JsonError' do
+          expect { gauge.to_json }.to raise_error(JSONError)
         end
       end
     end

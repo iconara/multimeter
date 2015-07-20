@@ -82,13 +82,13 @@ module Multimeter
 
         context '500' do
           it 'responds with error 500 if an exception is thrown in the request handling' do
-            allow(registry).to receive(:to_java).and_raise('blurgh')
+            allow(registry).to receive(:to_json).and_raise('blurgh')
             status, headers, body = app.call({'QUERY_STRING' => ''})
             expect(status).to eq(500)
           end
 
           it 'responds with Connection: close' do
-            allow(registry).to receive(:to_java).and_raise('blurgh')
+            allow(registry).to receive(:to_json).and_raise('blurgh')
             status, headers, body = app.call({'QUERY_STRING' => ''})
             expect(headers).to include('Connection' => 'close')
           end

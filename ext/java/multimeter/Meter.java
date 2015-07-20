@@ -6,6 +6,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
@@ -34,6 +35,11 @@ public class Meter extends RubyObject {
   @JRubyMethod(name="to_java")
   public IRubyObject toJava(ThreadContext ctx) {
     return JavaUtil.convertJavaToUsableRubyObject(ctx.runtime, meter);
+  }
+
+  @JRubyMethod(name="to_json")
+  public RubyString toJson(ThreadContext ctx) {
+    return JSONSerializer.getInstance().serialize(ctx, meter);
   }
 
   @JRubyMethod

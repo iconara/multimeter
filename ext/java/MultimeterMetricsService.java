@@ -10,6 +10,7 @@ import multimeter.Timer;
 import multimeter.Histogram;
 import multimeter.Snapshot;
 import multimeter.Gauge;
+import multimeter.JSONSerializer;
 
 public class MultimeterMetricsService implements BasicLibraryService {
   public boolean basicLoad(final Ruby runtime) throws IOException {
@@ -20,6 +21,7 @@ public class MultimeterMetricsService implements BasicLibraryService {
     Histogram.setup(runtime);
     Snapshot.setup(runtime);
     Gauge.setup(runtime);
+    JSONSerializer.setup(runtime);
     return true;
   }
 }
