@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency 'multimeter', "= #{Multimeter::VERSION}"
   s.add_dependency 'metrics-servlets-jars', '~> 3.1'
-  s.add_dependency 'rjack-jetty', '~> 9.3'
+  s.add_dependency 'rjack-jetty', '~> 9.2.12'
 
   s.files         = Dir['lib/multimeter/http.rb']
   s.require_paths = %w[lib]
