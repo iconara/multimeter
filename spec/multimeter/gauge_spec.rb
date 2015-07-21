@@ -5,7 +5,7 @@ require 'spec_helper'
 module Multimeter
   describe Gauge do
     let :gauge do
-      MetricRegistry.new.gauge('a_gauge') { @value }
+      MetricRegistry.new.gauge('a_gauge', :int) { @value }
     end
 
     before do
@@ -20,12 +20,19 @@ module Multimeter
       end
     end
 
-    describe '#to_h' do
-      it 'returns a hash representation of the gauge' do
-        expect(gauge.to_h).to eq(
-          :type => :gauge,
-          :value => 3
-        )
+    describe '#to_json' do
+      it 'returns a json representation of the gauge' do
+        expect(JSON.parse(gauge.to_json)).to include('value' => 3)
+      end
+
+      context 'when the gauge is untyped' do
+        let :gauge do
+          MetricRegistry.new.gauge('b_gauge') { 1 }
+        end
+
+        it 'raises JsonError' do
+          expect { gauge.to_json }.to raise_error(JSONError)
+        end
       end
     end
   end

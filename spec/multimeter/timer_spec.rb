@@ -140,35 +140,25 @@ module Multimeter
       end
     end
 
-    describe '#to_h' do
+    describe '#to_json' do
       it 'returns a hash representation of the timer' do
         timer.update(100, :milliseconds)
-        h = timer.to_h
-        expect(h[:type]).to eq(:timer)
-        expect(h[:count]).to eq(1)
-        expect(h[:mean_rate]).to be_a(Numeric)
-        expect(h[:one_minute_rate]).to be_a(Numeric)
-        expect(h[:five_minute_rate]).to be_a(Numeric)
-        expect(h[:fifteen_minute_rate]).to be_a(Numeric)
-        expect(h[:max]).to be_a(Numeric)
-        expect(h[:min]).to be_a(Numeric)
-        expect(h[:mean]).to be_a(Numeric)
-        expect(h[:std_dev]).to be_a(Numeric)
-        expect(h[:median]).to be_a(Numeric)
-        expect(h[:percentiles]['75']).to be_a(Numeric)
-        expect(h[:percentiles]['95']).to be_a(Numeric)
-        expect(h[:percentiles]['98']).to be_a(Numeric)
-        expect(h[:percentiles]['99']).to be_a(Numeric)
-        expect(h[:percentiles]['99.9']).to be_a(Numeric)
-      end
-
-      it 'scales the durations to milliseconds' do
-        timer.update(1, :seconds)
-        h = timer.to_h
-        expect(h[:max]).to eq(1000.0)
-        expect(h[:min]).to eq(1000.0)
-        expect(h[:mean]).to eq(1000.0)
-        expect(h[:median]).to eq(1000.0)
+        expect(JSON.parse(timer.to_json)).to include(
+          'count' => 1,
+          'mean_rate' => be_a(Numeric),
+          'm1_rate' => be_a(Numeric),
+          'm5_rate' => be_a(Numeric),
+          'm15_rate' => be_a(Numeric),
+          'max' => 100.0,
+          'min' => 100.0,
+          'mean' => 100.0,
+          'stddev' => 0.0,
+          'p50' => 100.0,
+          'p75' => 100.0,
+          'p95' => 100.0,
+          'p99' => 100.0,
+          'p999' => 100.0,
+        )
       end
     end
   end

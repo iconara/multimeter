@@ -14,7 +14,7 @@ Rake::JavaExtensionTask.new('multimeter_metrics') do |ext|
 end
 
 namespace :bundler do
-  Bundler::GemHelper.install_tasks
+  Bundler::GemHelper.install_tasks(name: 'multimeter')
 end
 
 task :release => [:spec, :compile, 'bundler:release']

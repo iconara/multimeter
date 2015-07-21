@@ -6,12 +6,14 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.javasupport.JavaUtil;
 
 import static org.jruby.runtime.Visibility.PRIVATE;
 
@@ -33,6 +35,16 @@ public class Timer extends RubyObject {
   public Timer(Ruby runtime, com.codahale.metrics.Timer timer) {
     super(runtime, runtime.getModule("Multimeter").getClass("Timer"));
     this.timer = timer;
+  }
+
+  @JRubyMethod(name="to_java")
+  public IRubyObject toJava(ThreadContext ctx) {
+    return JavaUtil.convertJavaToUsableRubyObject(ctx.runtime, timer);
+  }
+
+  @JRubyMethod(name="to_json")
+  public RubyString toJson(ThreadContext ctx) {
+    return JSONSerializer.getInstance().serialize(ctx, timer);
   }
 
   @JRubyMethod

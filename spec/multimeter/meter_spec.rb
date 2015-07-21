@@ -42,16 +42,16 @@ module Multimeter
       end
     end
 
-    describe '#to_h' do
-      it 'returns a hash representation of the meter' do
+    describe '#to_json' do
+      it 'returns a json representation of the meter' do
         meter.mark
-        h = meter.to_h
-        expect(h[:type]).to eq(:meter)
-        expect(h[:count]).to eq(1)
-        expect(h[:mean_rate]).to be_a(Numeric)
-        expect(h[:one_minute_rate]).to be_a(Numeric)
-        expect(h[:five_minute_rate]).to be_a(Numeric)
-        expect(h[:fifteen_minute_rate]).to be_a(Numeric)
+        expect(JSON.parse(meter.to_json)).to include(
+          'count' => 1,
+          'mean_rate' => be_a(Numeric),
+          'm1_rate' => be_a(Numeric),
+          'm5_rate' => be_a(Numeric),
+          'm15_rate' => be_a(Numeric),
+        )
       end
     end
   end

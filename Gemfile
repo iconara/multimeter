@@ -1,6 +1,7 @@
 source 'https://rubygems.org/'
 
-gemspec
+gemspec name: 'multimeter'
+gemspec name: 'multimeter-http'
 
 group :examples do
   gem 'rack'

@@ -18,7 +18,8 @@ Gem::Specification.new do |s|
   s.rubyforge_project = 'multimeter'
 
   s.add_dependency 'metrics-core-jars', '~> 3.1', '< 4.0.0'
+  s.add_dependency 'metrics-json-jars', '~> 3.1'
 
-  s.files         = Dir['lib/**/*.rb', 'lib/**/*.jar']
+  s.files         = %w[lib/multimeter.rb lib/multimeter_metrics.jar lib/multimeter/json.rb lib/multimeter/rack.rb]
   s.require_paths = %w[lib]
 end
