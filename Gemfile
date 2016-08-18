@@ -3,7 +3,7 @@ source 'https://rubygems.org/'
 gemspec
 
 group :examples do
-  gem 'rack'
+  gem 'rack', '<= 2'
 end
 
 group :test do
