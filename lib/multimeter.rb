@@ -46,7 +46,7 @@ module Multimeter
       {
         :type => :histogram,
         :count => count,
-      }.merge(snapshot.to_h(NANO_TO_MILLI_SCALE))
+      }.merge(snapshot.to_h)
     end
   end
 

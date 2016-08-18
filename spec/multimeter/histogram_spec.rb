@@ -69,21 +69,32 @@ module Multimeter
       end
     end
 
-    it 'returns a hash representation of the histogram' do
-      histogram.update(4)
-      h = histogram.to_h
-      expect(h[:type]).to eq(:histogram)
-      expect(h[:count]).to eq(1)
-      expect(h[:max]).to be_a(Numeric)
-      expect(h[:min]).to be_a(Numeric)
-      expect(h[:mean]).to be_a(Numeric)
-      expect(h[:std_dev]).to be_a(Numeric)
-      expect(h[:median]).to be_a(Numeric)
-      expect(h[:percentiles]['75']).to be_a(Numeric)
-      expect(h[:percentiles]['95']).to be_a(Numeric)
-      expect(h[:percentiles]['98']).to be_a(Numeric)
-      expect(h[:percentiles]['99']).to be_a(Numeric)
-      expect(h[:percentiles]['99.9']).to be_a(Numeric)
+    describe '#to_h' do
+      it 'returns a hash representation of the histogram' do
+        histogram.update(4)
+        h = histogram.to_h
+        expect(h[:type]).to eq(:histogram)
+        expect(h[:count]).to eq(1)
+        expect(h[:max]).to be_a(Numeric)
+        expect(h[:min]).to be_a(Numeric)
+        expect(h[:mean]).to be_a(Numeric)
+        expect(h[:std_dev]).to be_a(Numeric)
+        expect(h[:median]).to be_a(Numeric)
+        expect(h[:percentiles]['75']).to be_a(Numeric)
+        expect(h[:percentiles]['95']).to be_a(Numeric)
+        expect(h[:percentiles]['98']).to be_a(Numeric)
+        expect(h[:percentiles]['99']).to be_a(Numeric)
+        expect(h[:percentiles]['99.9']).to be_a(Numeric)
+      end
+
+      it 'does not scale values' do
+        histogram.update(1)
+        h = histogram.to_h
+        expect(h[:max]).to eq(1)
+        expect(h[:min]).to eq(1)
+        expect(h[:mean]).to eq(1)
+        expect(h[:median]).to eq(1)
+      end
     end
   end
 end
